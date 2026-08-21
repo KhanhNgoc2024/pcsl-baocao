@@ -130,6 +130,15 @@ export function BieuMauBuilder({ value, onChange }: Props) {
                 options={KIEU_OPTIONS}
                 onChange={(kieu) => suaTruong(index, { kieu })}
               />
+              {t.kieu === 'so' && (
+                <Input
+                  addonBefore="Đơn vị tính"
+                  style={{ width: 160 }}
+                  placeholder="vd: cột, sự cố, km"
+                  value={t.don_vi_tinh}
+                  onChange={(e) => suaTruong(index, { don_vi_tinh: e.target.value })}
+                />
+              )}
               <Checkbox checked={t.bat_buoc} onChange={(e) => suaTruong(index, { bat_buoc: e.target.checked })}>
                 Bắt buộc
               </Checkbox>

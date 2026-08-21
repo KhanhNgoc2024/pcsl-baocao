@@ -1,4 +1,4 @@
-import { Input, InputNumber, DatePicker, Select, Form, Table, Button, Space, Typography } from 'antd';
+import { Input, InputNumber, DatePicker, Select, Form, Table, Button, Space, Typography, Row, Col } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { CauHinhBieuMau, TruongBieuMau } from '../api/types';
@@ -199,6 +199,17 @@ function NhomField({
   );
 }
 
+/** Trường gọn (số/text/ngày/chọn 1) xếp nhiều cột mỗi hàng để đỡ phải cuộn khi mẫu có nhiều trường đơn giản. */
+const SPAN_GON = { xs: 24, sm: 12, md: 8 };
+const SPAN_VUA = { xs: 24, sm: 12 };
+const SPAN_DAY_DU = { xs: 24 };
+
+function spanCuaTruong(kieu: TruongBieuMau['kieu']) {
+  if (kieu === 'van_ban_dai' || kieu === 'bang' || kieu === 'nhom') return SPAN_DAY_DU;
+  if (kieu === 'chon_nhieu') return SPAN_VUA;
+  return SPAN_GON;
+}
+
 export function DynamicForm({ cauHinh, value, onChange, disabled }: Props) {
   const duLieu = value ?? {};
 
@@ -207,17 +218,19 @@ export function DynamicForm({ cauHinh, value, onChange, disabled }: Props) {
   };
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size="middle">
+    <Row gutter={[16, 8]}>
       {cauHinh.truong.map((t) => (
+        <Col key={t.ma} {...spanCuaTruong(t.kieu)}>
         <Form.Item
-          key={t.ma}
           label={t.nhan}
           required={t.bat_buoc}
-          style={{ marginBottom: 0 }}
+          layout="vertical"
+          style={{ marginBottom: 8 }}
         >
           {t.kieu === 'so' && (
             <InputNumber
               style={{ width: '100%' }}
+              addonAfter={t.don_vi_tinh || undefined}
               value={duLieu[t.ma] as number}
               disabled={disabled}
               onChange={(v) => capNhat(t.ma, v)}
@@ -282,8 +295,13 @@ export function DynamicForm({ cauHinh, value, onChange, disabled }: Props) {
             />
           )}
         </Form.Item>
+        </Col>
       ))}
-      {cauHinh.truong.length === 0 && <Typography.Text type="secondary">Mẫu báo cáo này chưa có trường nào.</Typography.Text>}
-    </Space>
+      {cauHinh.truong.length === 0 && (
+        <Col span={24}>
+          <Typography.Text type="secondary">Mẫu báo cáo này chưa có trường nào.</Typography.Text>
+        </Col>
+      )}
+    </Row>
   );
 }

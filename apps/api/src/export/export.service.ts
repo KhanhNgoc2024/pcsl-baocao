@@ -160,7 +160,6 @@ export class ExportService {
           hang++;
         }
       }
-      hang++;
     } else if (t.kieu === 'nhom') {
       sheet.getCell(hang, 1).value = t.nhan;
       sheet.getCell(hang, 1).font = { bold: true };
@@ -182,7 +181,6 @@ export class ExportService {
         }
         hang++;
       }
-      hang++;
     } else {
       sheet.getCell(hang, 1).value = t.nhan;
       sheet.getCell(hang, 1).font = { bold: true };
@@ -198,7 +196,7 @@ export class ExportService {
       } else if (!laTongHop) {
         cell.value = p.duLieu?.[t.ma] ?? '';
       }
-      hang += 2;
+      hang += 1;
     }
     return hang;
   }
