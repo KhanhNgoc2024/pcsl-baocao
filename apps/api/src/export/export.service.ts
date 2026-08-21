@@ -21,6 +21,7 @@ interface TruongBieuMau {
   nhan: string;
   kieu: string;
   cot?: { ma: string; nhan: string; kieu: string; tong?: boolean }[];
+  dong?: { ma: string; nhan: string }[];
   con?: { ma: string; nhan: string; kieu: string }[];
 }
 
@@ -60,7 +61,16 @@ export class ExportService {
     const cotCoBan = ['Đơn vị', 'Trạng thái', 'Thời gian nộp', 'Đúng/Trễ hạn', 'Người nộp'];
     const cotDuLieu: string[] = [];
     for (const t of truongList) {
-      if (t.kieu === 'bang') {
+      if (t.kieu === 'bang' && (t.dong ?? []).length > 0) {
+        for (const d of t.dong ?? []) {
+          for (const c of t.cot ?? []) {
+            cotDuLieu.push(`${t.nhan} - ${d.nhan} - ${c.nhan}`);
+          }
+        }
+        for (const c of t.cot ?? []) {
+          if (c.tong) cotDuLieu.push(`${t.nhan} - ${c.nhan} (tổng tất cả dòng)`);
+        }
+      } else if (t.kieu === 'bang') {
         for (const c of t.cot ?? []) {
           if (c.tong) cotDuLieu.push(`${t.nhan} - ${c.nhan} (tổng)`);
         }
@@ -86,7 +96,19 @@ export class ExportService {
         nop?.nguoiNop?.hoTen ?? '',
       ];
       for (const t of truongList) {
-        if (t.kieu === 'bang') {
+        if (t.kieu === 'bang' && (t.dong ?? []).length > 0) {
+          const giaTriDong: Record<string, Record<string, any>> = duLieu[t.ma] ?? {};
+          for (const d of t.dong ?? []) {
+            for (const c of t.cot ?? []) {
+              dong.push(giaTriDong[d.ma]?.[c.ma] ?? '');
+            }
+          }
+          for (const c of t.cot ?? []) {
+            if (!c.tong) continue;
+            const tongTatCa = (t.dong ?? []).reduce((sum, d) => sum + (Number(giaTriDong[d.ma]?.[c.ma]) || 0), 0);
+            dong.push(tongTatCa);
+          }
+        } else if (t.kieu === 'bang') {
           const rows: Record<string, any>[] = duLieu[t.ma] ?? [];
           for (const c of t.cot ?? []) {
             if (!c.tong) continue;

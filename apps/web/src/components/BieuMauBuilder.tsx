@@ -67,6 +67,23 @@ export function BieuMauBuilder({ value, onChange }: Props) {
     suaTruong(index, { cot: (t.cot ?? []).filter((_, i) => i !== cotIndex) });
   };
 
+  const themDongCoDinh = (index: number) => {
+    const t = truong[index];
+    const dong = t.dong ?? [];
+    suaTruong(index, { dong: [...dong, { ma: `dong_${dong.length + 1}`, nhan: 'Dòng mới' }] });
+  };
+
+  const suaDongCoDinh = (index: number, dongIndex: number, patch: Partial<NonNullable<TruongBieuMau['dong']>[number]>) => {
+    const t = truong[index];
+    const dong = (t.dong ?? []).map((d, i) => (i === dongIndex ? { ...d, ...patch } : d));
+    suaTruong(index, { dong });
+  };
+
+  const xoaDongCoDinh = (index: number, dongIndex: number) => {
+    const t = truong[index];
+    suaTruong(index, { dong: (t.dong ?? []).filter((_, i) => i !== dongIndex) });
+  };
+
   const themCon = (index: number) => {
     const t = truong[index];
     const con = t.con ?? [];
@@ -160,6 +177,37 @@ export function BieuMauBuilder({ value, onChange }: Props) {
                   ))}
                   <Button size="small" icon={<PlusOutlined />} onClick={() => themCot(index)}>
                     Thêm cột
+                  </Button>
+                </Space>
+
+                <Typography.Text type="secondary" style={{ display: 'block', marginTop: 16 }}>
+                  Các dòng cố định của bảng (tuỳ chọn — để trống nếu muốn người nộp tự thêm/xoá dòng; vd: Viettel, VNPT, FPT, Mobiphone):
+                </Typography.Text>
+                <Space direction="vertical" style={{ width: '100%', marginTop: 8 }}>
+                  {(t.dong ?? []).map((d, dongIndex) => (
+                    <Space key={dongIndex} wrap>
+                      <Input
+                        addonBefore="Nhãn dòng"
+                        style={{ width: 180 }}
+                        value={d.nhan}
+                        onChange={(e) =>
+                          suaDongCoDinh(index, dongIndex, {
+                            nhan: e.target.value,
+                            ma: d.ma || taoMaTuNhan(e.target.value, dongIndex),
+                          })
+                        }
+                      />
+                      <Input
+                        addonBefore="Mã dòng"
+                        style={{ width: 160 }}
+                        value={d.ma}
+                        onChange={(e) => suaDongCoDinh(index, dongIndex, { ma: e.target.value })}
+                      />
+                      <Button danger size="small" icon={<DeleteOutlined />} onClick={() => xoaDongCoDinh(index, dongIndex)} />
+                    </Space>
+                  ))}
+                  <Button size="small" icon={<PlusOutlined />} onClick={() => themDongCoDinh(index)}>
+                    Thêm dòng cố định
                   </Button>
                 </Space>
               </div>

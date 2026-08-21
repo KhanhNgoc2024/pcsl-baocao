@@ -10,7 +10,76 @@ interface Props {
   disabled?: boolean;
 }
 
-function BangField({
+/** Bảng với danh sách dòng cố định do admin định nghĩa (vd: Viettel, VNPT...) — người nộp chỉ điền giá trị từng ô, không thêm/xoá được dòng. */
+function BangDongCoDinhField({
+  truong,
+  giaTri,
+  onChange,
+  disabled,
+}: {
+  truong: TruongBieuMau;
+  giaTri: Record<string, Record<string, unknown>>;
+  onChange: (giaTri: Record<string, Record<string, unknown>>) => void;
+  disabled?: boolean;
+}) {
+  const cot = truong.cot ?? [];
+  const dong = truong.dong ?? [];
+
+  const suaO = (dongMa: string, cotMa: string, val: unknown) => {
+    onChange({ ...giaTri, [dongMa]: { ...(giaTri[dongMa] ?? {}), [cotMa]: val } });
+  };
+
+  const tong = (cotMa: string) => dong.reduce((s, d) => s + (Number(giaTri[d.ma]?.[cotMa]) || 0), 0);
+
+  return (
+    <Table
+      scroll={{ x: 'max-content' }}
+      rowKey="ma"
+      dataSource={dong}
+      pagination={false}
+      size="small"
+      columns={[
+        { title: '', dataIndex: 'nhan', fixed: 'left' as const },
+        ...cot.map((c) => ({
+          title: c.nhan + (c.tong ? ' (tổng)' : ''),
+          dataIndex: c.ma,
+          render: (_: unknown, d: { ma: string }) =>
+            c.kieu === 'so' ? (
+              <InputNumber
+                value={giaTri[d.ma]?.[c.ma] as number}
+                disabled={disabled}
+                onChange={(val) => suaO(d.ma, c.ma, val)}
+                style={{ width: '100%' }}
+              />
+            ) : (
+              <Input
+                value={giaTri[d.ma]?.[c.ma] as string}
+                disabled={disabled}
+                onChange={(e) => suaO(d.ma, c.ma, e.target.value)}
+              />
+            ),
+        })),
+      ]}
+      summary={() =>
+        cot.some((c) => c.tong) ? (
+          <Table.Summary.Row>
+            <Table.Summary.Cell index={0}>
+              <b>Tổng</b>
+            </Table.Summary.Cell>
+            {cot.map((c, i) => (
+              <Table.Summary.Cell key={c.ma} index={i + 1}>
+                {c.tong ? <b>{tong(c.ma)}</b> : ''}
+              </Table.Summary.Cell>
+            ))}
+          </Table.Summary.Row>
+        ) : null
+      }
+    />
+  );
+}
+
+/** Bảng cho người nộp tự thêm/xoá dòng (hành vi gốc, dùng khi mẫu chưa cấu hình dòng cố định). */
+function BangDongTuDoField({
   truong,
   rows,
   onChange,
@@ -188,8 +257,16 @@ export function DynamicForm({ cauHinh, value, onChange, disabled }: Props) {
               onChange={(v) => capNhat(t.ma, v)}
             />
           )}
-          {t.kieu === 'bang' && (
-            <BangField
+          {t.kieu === 'bang' && (t.dong ?? []).length > 0 && (
+            <BangDongCoDinhField
+              truong={t}
+              giaTri={(duLieu[t.ma] as Record<string, Record<string, unknown>>) ?? {}}
+              onChange={(giaTri) => capNhat(t.ma, giaTri)}
+              disabled={disabled}
+            />
+          )}
+          {t.kieu === 'bang' && (t.dong ?? []).length === 0 && (
+            <BangDongTuDoField
               truong={t}
               rows={(duLieu[t.ma] as Record<string, unknown>[]) ?? []}
               onChange={(rows) => capNhat(t.ma, rows)}

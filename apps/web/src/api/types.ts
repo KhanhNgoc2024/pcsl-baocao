@@ -37,6 +37,7 @@ export interface TruongBieuMau {
   don_vi_tinh?: string;
   tuy_chon?: string[];
   cot?: { ma: string; nhan: string; kieu: string; tong?: boolean }[]; // dùng khi kieu = 'bang'
+  dong?: { ma: string; nhan: string }[]; // dùng khi kieu = 'bang': nếu có, bảng có danh sách dòng cố định (vd Viettel, VNPT...), người nộp không thêm/xoá được dòng
   con?: { ma: string; nhan: string; kieu: 'text' | 'so' }[]; // dùng khi kieu = 'nhom': nhiều nhãn/mã con dùng chung 1 trường cha
 }
 
