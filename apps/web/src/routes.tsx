@@ -14,6 +14,7 @@ import { BaoCaoVanBanListPage } from './pages/bao-cao-van-ban/BaoCaoVanBanListPa
 import { BaoCaoVanBanCanNopPage } from './pages/bao-cao-van-ban/BaoCaoVanBanCanNopPage';
 import { ThongBaoPage } from './pages/thong-bao/ThongBaoPage';
 import { TongHopBaoCaoPage } from './pages/tong-hop/TongHopBaoCaoPage';
+import { TongHopBaoCaoVanBanPage } from './pages/tong-hop/TongHopBaoCaoVanBanPage';
 import { DoiMatKhauPage } from './pages/DoiMatKhauPage';
 
 export const router = createBrowserRouter([
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
               { path: '/mau-bao-cao/:id/tong-hop-nam', element: <TongHopNamPage /> },
               { path: '/ky/:kyId', element: <KyBaoCaoDetailPage /> },
               { path: '/bao-cao-van-ban', element: <BaoCaoVanBanListPage /> },
+              { path: '/tong-hop-bao-cao-van-ban', element: <TongHopBaoCaoVanBanPage /> },
             ],
           },
           {

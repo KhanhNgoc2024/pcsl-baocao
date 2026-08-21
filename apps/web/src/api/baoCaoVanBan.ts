@@ -9,6 +9,17 @@ export function useBaoCaoVanBanList() {
   });
 }
 
+export interface BaoCaoVanBanVoiThongKe extends BaoCaoVanBan {
+  thongKe: { tongDonVi: number; daNop: number; chuaNop: number; tyLe: number };
+}
+
+export function useTongHopBaoCaoVanBanList() {
+  return useQuery({
+    queryKey: ['bao-cao-van-ban-tong-hop'],
+    queryFn: async () => (await api.get<BaoCaoVanBanVoiThongKe[]>('/bao-cao-van-ban-tong-hop')).data,
+  });
+}
+
 export function useBaoCaoVanBanDetail(id: number | undefined) {
   return useQuery({
     queryKey: ['bao-cao-van-ban', id],

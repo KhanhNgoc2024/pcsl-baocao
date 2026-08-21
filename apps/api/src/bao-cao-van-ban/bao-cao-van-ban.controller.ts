@@ -38,6 +38,12 @@ export class BaoCaoVanBanController {
     return this.baoCaoVanBanService.findAll(user);
   }
 
+  @Get('bao-cao-van-ban-tong-hop')
+  @Roles('SYS_ADMIN', 'UNIT_ADMIN', 'APPROVER')
+  tongHopDanhSach(@CurrentUser() user: CurrentUserPayload) {
+    return this.baoCaoVanBanService.listAll(user);
+  }
+
   @Get('bao-cao-van-ban/:id')
   findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserPayload) {
     return this.baoCaoVanBanService.findOne(id, user);

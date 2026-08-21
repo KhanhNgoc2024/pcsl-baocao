@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import {
   Table,
@@ -36,6 +37,7 @@ const TRANG_THAI_LABEL: Record<string, string> = { CHUA_NOP: 'Chưa nộp', DA_N
 
 export function BaoCaoVanBanListPage() {
   const { data, isLoading } = useBaoCaoVanBanList();
+  const [searchParams, setSearchParams] = useSearchParams();
   const taoBcvb = useTaoBaoCaoVanBan();
   const giaoDonVi = useGiaoDonViVanBan();
   const nhacNop = useNhacNopVanBan();
@@ -76,6 +78,20 @@ export function BaoCaoVanBanListPage() {
     setDangXemId(id);
     setDonViDaGiao(donViGiao?.map((g) => g.donViId) ?? []);
   };
+
+  // Mở sẵn chi tiết khi được điều hướng tới từ trang "Tổng hợp báo cáo" kèm ?xem=<id>
+  useEffect(() => {
+    const xemId = Number(searchParams.get('xem'));
+    if (xemId && data) {
+      const bcvb = data.find((b) => b.id === xemId);
+      if (bcvb) moXem(bcvb.id, bcvb.donViGiao);
+      setSearchParams((prev) => {
+        prev.delete('xem');
+        return prev;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const onGiaoDonVi = async () => {
     if (!dangXemId) return;

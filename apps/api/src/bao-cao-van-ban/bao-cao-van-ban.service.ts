@@ -24,6 +24,21 @@ export class BaoCaoVanBanService {
     });
   }
 
+  /** Danh sách tất cả yêu cầu báo cáo văn bản (thuộc đơn vị mình quản lý, hoặc tất cả nếu SYS_ADMIN) kèm thống kê nộp — dùng cho trang "Tổng hợp báo cáo" riêng của Báo cáo bằng văn bản. */
+  async listAll(user: CurrentUserPayload) {
+    const list = await this.prisma.baoCaoVanBan.findMany({
+      where: baoCaoVanBanScopeWhere(user),
+      include: { donViTao: true, bcvbNop: { select: { trangThai: true } } },
+      orderBy: { hanNop: 'desc' },
+    });
+    return list.map((b) => {
+      const tongDonVi = b.bcvbNop.length;
+      const daNop = b.bcvbNop.filter((n) => n.trangThai === 'DA_NOP').length;
+      const { bcvbNop, ...rest } = b;
+      return { ...rest, thongKe: { tongDonVi, daNop, chuaNop: tongDonVi - daNop, tyLe: tongDonVi ? daNop / tongDonVi : 0 } };
+    });
+  }
+
   async findOne(id: number, user: CurrentUserPayload) {
     const bcvb = await this.prisma.baoCaoVanBan.findFirst({
       where: { id, ...baoCaoVanBanScopeWhere(user) },
