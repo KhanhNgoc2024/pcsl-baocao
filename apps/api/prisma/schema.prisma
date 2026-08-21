@@ -1,0 +1,378 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum LoaiDonVi {
+  CONG_TY
+  PHONG
+  BAN_QLDA
+  DIEN_LUC
+  XI_NGHIEP
+  TRUNG_TAM
+}
+
+enum TrangThaiDonVi {
+  HOAT_DONG
+  NGUNG
+}
+
+enum TrangThaiNguoiDung {
+  HOAT_DONG
+  NGUNG
+}
+
+enum MaVaiTro {
+  SYS_ADMIN
+  UNIT_ADMIN
+  REPORTER
+  APPROVER
+  VIEWER
+}
+
+enum ChuKy {
+  THANG
+  QUY
+  NAM
+}
+
+enum LoaiNhap {
+  BIEU_MAU
+  TAI_FILE
+  CA_HAI
+}
+
+enum TrangThaiMauBaoCao {
+  HOAT_DONG
+  NGUNG
+}
+
+enum TrangThaiKyBaoCao {
+  MO
+  DANG_MO
+  DA_DONG
+}
+
+enum TrangThaiBaoCaoNop {
+  CHUA_NOP
+  NHAP
+  CHO_DUYET_DON_VI
+  DA_NOP
+  DA_DUYET
+  TRA_LAI
+}
+
+enum CheDoBaoCaoVanBan {
+  CHO_PHEP_TAI_LEN
+  CHI_XEM
+}
+
+enum TrangThaiBaoCaoVanBan {
+  HOAT_DONG
+  NGUNG
+}
+
+enum TrangThaiBcvbNop {
+  CHUA_NOP
+  DA_NOP
+}
+
+enum LoaiFile {
+  docx
+  doc
+  pdf
+}
+
+enum LoaiThongBao {
+  GIAO_MAU
+  MO_KY
+  SAP_DEN_HAN
+  DA_DEN_HAN
+  QUA_HAN
+  CHO_DUYET_DON_VI
+  DA_NOP
+  TRA_LAI
+  KHAC
+}
+
+// ==================== ĐƠN VỊ & NGƯỜI DÙNG ====================
+
+model DonVi {
+  id         Int            @id @default(autoincrement())
+  maDonVi    String         @unique @map("ma_don_vi") @db.VarChar(20)
+  tenDonVi   String         @map("ten_don_vi") @db.VarChar(255)
+  loaiDonVi  LoaiDonVi      @map("loai_don_vi")
+  laDauMoi   Boolean        @default(false) @map("la_dau_moi")
+  donViChaId Int?           @map("don_vi_cha_id")
+  donViCha   DonVi?         @relation("DonViCha", fields: [donViChaId], references: [id])
+  donViCon   DonVi[]        @relation("DonViCha")
+  thuTu      Int            @default(0) @map("thu_tu")
+  trangThai  TrangThaiDonVi @default(HOAT_DONG) @map("trang_thai")
+
+  nguoiDung        NguoiDung[]
+  mauBaoCaoTao     MauBaoCao[]         @relation("MauBaoCaoTao")
+  mauBaoCaoGiao    MauBaoCaoDonVi[]
+  baoCaoNop        BaoCaoNop[]
+  baoCaoVanBanTao  BaoCaoVanBan[]      @relation("BaoCaoVanBanTao")
+  baoCaoVanBanGiao BaoCaoVanBanDonVi[]
+  bcvbNop          BaoCaoVanBanNop[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("don_vi")
+}
+
+model VaiTro {
+  id   Int      @id @default(autoincrement())
+  ma   MaVaiTro @unique
+  ten  String   @db.VarChar(100)
+  moTa String?  @map("mo_ta")
+
+  nguoiDungVaiTro NguoiDungVaiTro[]
+
+  @@map("vai_tro")
+}
+
+model NguoiDung {
+  id               Int                @id @default(autoincrement())
+  tenDangNhap      String             @unique @map("ten_dang_nhap") @db.VarChar(100)
+  matKhauHash      String             @map("mat_khau_hash")
+  refreshTokenHash String?            @map("refresh_token_hash")
+  hoTen            String             @map("ho_ten") @db.VarChar(255)
+  email            String?            @db.VarChar(255)
+  donViId          Int                @map("don_vi_id")
+  donVi            DonVi              @relation(fields: [donViId], references: [id])
+  trangThai        TrangThaiNguoiDung @default(HOAT_DONG) @map("trang_thai")
+
+  vaiTro               NguoiDungVaiTro[]
+  baoCaoNop            BaoCaoNop[]       @relation("NguoiNop")
+  baoCaoNopDuyet       BaoCaoNop[]       @relation("NguoiDuyet")
+  baoCaoNopDuyetDonVi  BaoCaoNop[]       @relation("NguoiDuyetDonVi")
+  bcvbNop              BaoCaoVanBanNop[] @relation("BcvbNguoiNop")
+  tepDinhKem     TepDinhKem[]
+  thongBao       ThongBao[]
+  nhatKy         NhatKy[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("nguoi_dung")
+}
+
+model NguoiDungVaiTro {
+  nguoiDungId Int       @map("nguoi_dung_id")
+  nguoiDung   NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+  vaiTroId    Int       @map("vai_tro_id")
+  vaiTro      VaiTro    @relation(fields: [vaiTroId], references: [id], onDelete: Cascade)
+
+  @@id([nguoiDungId, vaiTroId])
+  @@map("nguoi_dung_vai_tro")
+}
+
+// ==================== MẪU BÁO CÁO (Danh sách báo cáo) ====================
+
+model MauBaoCao {
+  id             Int                @id @default(autoincrement())
+  ma             String             @db.VarChar(50)
+  ten            String             @db.VarChar(255)
+  moTa           String?            @map("mo_ta")
+  donViTaoId     Int                @map("don_vi_tao_id")
+  donViTao       DonVi              @relation("MauBaoCaoTao", fields: [donViTaoId], references: [id])
+  chuKy          ChuKy              @map("chu_ky")
+  loaiNhap       LoaiNhap           @map("loai_nhap")
+  cauHinhBieuMau Json?              @map("cau_hinh_bieu_mau")
+  fileMauId      Int?               @map("file_mau_id")
+  fileMau        TepDinhKem?        @relation("FileMauMauBaoCao", fields: [fileMauId], references: [id])
+  quyTacHan      Json               @map("quy_tac_han")
+  canDuyet       Boolean            @default(false) @map("can_duyet")
+  tuDongSinhKy   Boolean            @default(true) @map("tu_dong_sinh_ky")
+  trangThai      TrangThaiMauBaoCao @default(HOAT_DONG) @map("trang_thai")
+
+  donViGiao MauBaoCaoDonVi[]
+  kyBaoCao  KyBaoCao[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("mau_bao_cao")
+}
+
+model MauBaoCaoDonVi {
+  mauBaoCaoId Int       @map("mau_bao_cao_id")
+  mauBaoCao   MauBaoCao @relation(fields: [mauBaoCaoId], references: [id], onDelete: Cascade)
+  donViId     Int       @map("don_vi_id")
+  donVi       DonVi     @relation(fields: [donViId], references: [id], onDelete: Cascade)
+
+  @@id([mauBaoCaoId, donViId])
+  @@map("mau_bao_cao_don_vi")
+}
+
+model KyBaoCao {
+  id          Int               @id @default(autoincrement())
+  mauBaoCaoId Int               @map("mau_bao_cao_id")
+  mauBaoCao   MauBaoCao         @relation(fields: [mauBaoCaoId], references: [id])
+  nam         Int
+  kySo        Int               @map("ky_so")
+  tenKy       String            @map("ten_ky") @db.VarChar(255)
+  ngayBatDau  DateTime          @map("ngay_bat_dau")
+  ngayKetThuc DateTime          @map("ngay_ket_thuc")
+  hanNop      DateTime          @map("han_nop")
+  trangThai   TrangThaiKyBaoCao @default(DANG_MO) @map("trang_thai")
+
+  baoCaoNop BaoCaoNop[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([mauBaoCaoId, nam, kySo])
+  @@map("ky_bao_cao")
+}
+
+model BaoCaoNop {
+  id            Int                @id @default(autoincrement())
+  kyBaoCaoId    Int                @map("ky_bao_cao_id")
+  kyBaoCao      KyBaoCao           @relation(fields: [kyBaoCaoId], references: [id])
+  donViId       Int                @map("don_vi_id")
+  donVi         DonVi              @relation(fields: [donViId], references: [id])
+  nguoiNopId    Int?               @map("nguoi_nop_id")
+  nguoiNop      NguoiDung?         @relation("NguoiNop", fields: [nguoiNopId], references: [id])
+  duLieu        Json?              @map("du_lieu")
+  trangThai     TrangThaiBaoCaoNop @default(CHUA_NOP) @map("trang_thai")
+  thoiGianNop   DateTime?          @map("thoi_gian_nop")
+  treHan        Boolean            @default(false) @map("tre_han")
+  nguoiDuyetId  Int?               @map("nguoi_duyet_id")
+  nguoiDuyet    NguoiDung?         @relation("NguoiDuyet", fields: [nguoiDuyetId], references: [id])
+  thoiGianDuyet DateTime?          @map("thoi_gian_duyet")
+  ghiChuDuyet   String?            @map("ghi_chu_duyet")
+
+  /** Duyệt nội bộ tại đơn vị nộp (APPROVER/UNIT_ADMIN của chính đơn vị đó), trước khi báo cáo được gửi đến phòng ban chủ trì. */
+  nguoiDuyetDonViId  Int?       @map("nguoi_duyet_don_vi_id")
+  nguoiDuyetDonVi    NguoiDung? @relation("NguoiDuyetDonVi", fields: [nguoiDuyetDonViId], references: [id])
+  thoiGianDuyetDonVi DateTime?  @map("thoi_gian_duyet_don_vi")
+  ghiChuDuyetDonVi   String?    @map("ghi_chu_duyet_don_vi")
+
+  tepDinhKem TepDinhKem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([kyBaoCaoId, donViId])
+  @@map("bao_cao_nop")
+}
+
+// ==================== BÁO CÁO BẰNG VĂN BẢN (đột xuất) ====================
+
+model BaoCaoVanBan {
+  id           Int                   @id @default(autoincrement())
+  ten          String                @db.VarChar(255)
+  moTa         String?               @map("mo_ta")
+  donViTaoId   Int                   @map("don_vi_tao_id")
+  donViTao     DonVi                 @relation("BaoCaoVanBanTao", fields: [donViTaoId], references: [id])
+  cheDo        CheDoBaoCaoVanBan     @map("che_do")
+  hanNop       DateTime              @map("han_nop")
+  fileYeuCauId Int?                  @map("file_yeu_cau_id")
+  fileYeuCau   TepDinhKem?           @relation("FileYeuCauBcvb", fields: [fileYeuCauId], references: [id])
+  trangThai    TrangThaiBaoCaoVanBan @default(HOAT_DONG) @map("trang_thai")
+
+  donViGiao BaoCaoVanBanDonVi[]
+  bcvbNop   BaoCaoVanBanNop[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("bao_cao_van_ban")
+}
+
+model BaoCaoVanBanDonVi {
+  baoCaoVanBanId Int          @map("bao_cao_van_ban_id")
+  baoCaoVanBan   BaoCaoVanBan @relation(fields: [baoCaoVanBanId], references: [id], onDelete: Cascade)
+  donViId        Int          @map("don_vi_id")
+  donVi          DonVi        @relation(fields: [donViId], references: [id], onDelete: Cascade)
+
+  @@id([baoCaoVanBanId, donViId])
+  @@map("bao_cao_van_ban_don_vi")
+}
+
+model BaoCaoVanBanNop {
+  id             Int              @id @default(autoincrement())
+  baoCaoVanBanId Int              @map("bao_cao_van_ban_id")
+  baoCaoVanBan   BaoCaoVanBan     @relation(fields: [baoCaoVanBanId], references: [id])
+  donViId        Int              @map("don_vi_id")
+  donVi          DonVi            @relation(fields: [donViId], references: [id])
+  nguoiNopId     Int?             @map("nguoi_nop_id")
+  nguoiNop       NguoiDung?       @relation("BcvbNguoiNop", fields: [nguoiNopId], references: [id])
+  trangThai      TrangThaiBcvbNop @default(CHUA_NOP) @map("trang_thai")
+  thoiGianNop    DateTime?        @map("thoi_gian_nop")
+  treHan         Boolean          @default(false) @map("tre_han")
+  ghiChu         String?          @map("ghi_chu")
+
+  tepDinhKem TepDinhKem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([baoCaoVanBanId, donViId])
+  @@map("bao_cao_van_ban_nop")
+}
+
+// ==================== FILE ====================
+
+model TepDinhKem {
+  id            Int              @id @default(autoincrement())
+  baoCaoNopId   Int?             @map("bao_cao_nop_id")
+  baoCaoNop     BaoCaoNop?       @relation(fields: [baoCaoNopId], references: [id], onDelete: Cascade)
+  bcvbNopId     Int?             @map("bcvb_nop_id")
+  bcvbNop       BaoCaoVanBanNop? @relation(fields: [bcvbNopId], references: [id], onDelete: Cascade)
+  tenGoc        String           @map("ten_goc") @db.VarChar(500)
+  duongDanLuu   String           @map("duong_dan_luu") @db.VarChar(500)
+  loaiFile      LoaiFile         @map("loai_file")
+  kichThuoc     BigInt           @map("kich_thuoc")
+  nguoiTaiLenId Int              @map("nguoi_tai_len_id")
+  nguoiTaiLen   NguoiDung        @relation(fields: [nguoiTaiLenId], references: [id])
+
+  mauBaoCaoFileMau MauBaoCao[]    @relation("FileMauMauBaoCao")
+  bcvbFileYeuCau   BaoCaoVanBan[] @relation("FileYeuCauBcvb")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tep_dinh_kem")
+}
+
+// ==================== THÔNG BÁO & NHẬT KÝ ====================
+
+model ThongBao {
+  id          Int          @id @default(autoincrement())
+  nguoiDungId Int          @map("nguoi_dung_id")
+  nguoiDung   NguoiDung    @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+  loai        LoaiThongBao
+  tieuDe      String       @map("tieu_de") @db.VarChar(255)
+  noiDung     String?      @map("noi_dung")
+  duongDan    String?      @map("duong_dan") @db.VarChar(500)
+  daDoc       Boolean      @default(false) @map("da_doc")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("thong_bao")
+}
+
+model NhatKy {
+  id          Int        @id @default(autoincrement())
+  nguoiDungId Int?       @map("nguoi_dung_id")
+  nguoiDung   NguoiDung? @relation(fields: [nguoiDungId], references: [id])
+  hanhDong    String     @map("hanh_dong") @db.VarChar(100)
+  doiTuong    String?    @map("doi_tuong") @db.VarChar(100)
+  doiTuongId  Int?       @map("doi_tuong_id")
+  chiTiet     Json?      @map("chi_tiet")
+  ipAddress   String?    @map("ip_address") @db.VarChar(45)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("nhat_ky")
+}

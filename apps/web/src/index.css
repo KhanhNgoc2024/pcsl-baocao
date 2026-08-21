@@ -1,0 +1,48 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.app-header {
+  padding: 0 24px;
+}
+
+.app-content {
+  margin: 24px;
+}
+
+/* Tablet trở xuống (<= 992px): thu gọn khoảng cách để vừa màn hình hẹp hơn */
+@media (max-width: 992px) {
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .app-header-title {
+    font-size: 16px !important;
+  }
+
+  .app-content {
+    margin: 12px;
+  }
+
+  .ant-table {
+    font-size: 13px;
+  }
+}
+
+/* Màn rất hẹp (điện thoại): ẩn tên người dùng trong header, chỉ giữ avatar */
+@media (max-width: 576px) {
+  .app-header-username {
+    display: none;
+  }
+}
