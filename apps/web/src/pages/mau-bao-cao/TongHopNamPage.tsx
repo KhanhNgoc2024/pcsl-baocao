@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { Typography, Select, Card, Table, Empty, Space, Button } from 'antd';
+import { Typography, Select, Card, Table, Empty, Space, Button, Row, Col, Statistic } from 'antd';
 import { LeftOutlined } from '@ant-design/icons';
 import { useTongHopNam } from '../../api/mauBaoCao';
 import { BarChartTyLeNop } from '../../components/charts/BarChartTyLeNop';
@@ -60,6 +60,18 @@ export function TongHopNamPage() {
       {chuoiSoLieu.length > 0 && (
         <Card title="So sánh số liệu qua các kỳ" loading={isLoading} style={{ marginBottom: 16 }}>
           <LineChartSoSanh nhanTruc={data!.kyThongKe.map((k) => `Kỳ ${k.kySo}`)} chuoi={chuoiSoLieu} />
+        </Card>
+      )}
+
+      {data && data.truongSo.length > 0 && (
+        <Card title={`Tổng hợp cả năm ${nam} (cộng dồn các kỳ)`} loading={isLoading} style={{ marginBottom: 16 }}>
+          <Row gutter={[16, 16]}>
+            {data.truongSo.map((t) => (
+              <Col key={t.ma} xs={12} sm={8} md={6}>
+                <Statistic title={t.nhan} value={data.tongCongCaNam[t.ma] ?? 0} />
+              </Col>
+            ))}
+          </Row>
         </Card>
       )}
 

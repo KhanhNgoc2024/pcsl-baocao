@@ -6,6 +6,7 @@ import { NhatKyService } from '../nhat-ky/nhat-ky.service';
 import { CurrentUserPayload } from '../common/decorators/current-user.decorator';
 import { isSysAdmin, isDauMoiRole, mauBaoCaoScopeWhere, hasRole, TRANG_THAI_DA_DEN_HUB } from '../common/scope/scope.util';
 import { kyHienTai, tenKyMacDinh, tinhHanNop, tinhKhoangKy, QuyTacHan } from '../common/ky-time.util';
+import { layDanhSachTruongSo, tinhTongGiaTriTruongSo } from '../common/truong-so.util';
 import { CreateMauBaoCaoDto } from './dto/create-mau-bao-cao.dto';
 import { UpdateMauBaoCaoDto } from './dto/update-mau-bao-cao.dto';
 import { GiaoDonViDto } from './dto/giao-don-vi.dto';
@@ -178,7 +179,7 @@ export class MauBaoCaoService {
     });
   }
 
-  /** Tổng hợp theo năm: tỷ lệ nộp từng kỳ + so sánh số liệu (trường kiểu "so") giữa các kỳ trong năm, dùng để vẽ biểu đồ. */
+  /** Tổng hợp theo năm: tỷ lệ nộp từng kỳ + số liệu từng kỳ (tháng/quý) trong năm dùng để vẽ biểu đồ, kèm tổng cộng cả năm (cộng dồn các kỳ). */
   async tongHopNam(id: number, nam: number, user: CurrentUserPayload) {
     const mau = await this.findOne(id, user);
 
@@ -188,37 +189,14 @@ export class MauBaoCaoService {
       orderBy: { kySo: 'asc' },
     });
 
-    // Trường số để so sánh trên biểu đồ: trường kiểu "so" ở cấp cao nhất, và các nhãn con kiểu "so" bên trong trường kiểu "nhom".
+    // Trường số để so sánh trên biểu đồ: trường kiểu "so", nhãn con kiểu "so" trong "nhom", và cột "tong" trong bảng.
     const truongList: any[] = (mau.cauHinhBieuMau as any)?.truong ?? [];
-    const truongSo: { ma: string; nhan: string; duongDan: string[] }[] = [];
-    for (const t of truongList) {
-      if (t.kieu === 'so') {
-        truongSo.push({ ma: t.ma, nhan: t.nhan, duongDan: [t.ma] });
-      } else if (t.kieu === 'nhom') {
-        for (const c of t.con ?? []) {
-          if (c.kieu === 'so') {
-            truongSo.push({ ma: `${t.ma}.${c.ma}`, nhan: `${t.nhan} - ${c.nhan}`, duongDan: [t.ma, c.ma] });
-          }
-        }
-      }
-    }
-
-    const layGiaTri = (duLieu: Record<string, any>, duongDan: string[]): number => {
-      let v: any = duLieu;
-      for (const key of duongDan) v = v?.[key];
-      return Number(v) || 0;
-    };
+    const truongSo = layDanhSachTruongSo(truongList);
 
     const kyThongKe = kyList.map((ky) => {
       const tongDonVi = ky.baoCaoNop.length;
       const daNop = ky.baoCaoNop.filter((b) => TRANG_THAI_DA_DEN_HUB.includes(b.trangThai)).length;
-      const giaTri: Record<string, number> = {};
-      for (const t of truongSo) {
-        giaTri[t.ma] = ky.baoCaoNop.reduce((sum, b) => {
-          const d = (b.duLieu as Record<string, unknown>) ?? {};
-          return sum + layGiaTri(d, t.duongDan);
-        }, 0);
-      }
+      const giaTri = tinhTongGiaTriTruongSo(truongSo, ky.baoCaoNop);
       return {
         kyId: ky.id,
         kySo: ky.kySo,
@@ -232,7 +210,13 @@ export class MauBaoCaoService {
       };
     });
 
-    return { mauBaoCao: mau, nam, truongSo, kyThongKe };
+    // Tổng hợp cả năm: cộng dồn số liệu của tất cả các kỳ (tháng/quý) đã tính ở trên — hiển thị ở phần riêng, tách biệt với bảng so sánh từng kỳ.
+    const tongCongCaNam: Record<string, number> = {};
+    for (const t of truongSo) {
+      tongCongCaNam[t.ma] = kyThongKe.reduce((sum, k) => sum + (k.giaTri[t.ma] ?? 0), 0);
+    }
+
+    return { mauBaoCao: mau, nam, truongSo, kyThongKe, tongCongCaNam };
   }
 
   /** Tạo 1 kỳ báo cáo (dùng chung cho mở kỳ thủ công và cron tự động sinh kỳ). */

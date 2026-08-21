@@ -30,6 +30,12 @@ export class KyBaoCaoController {
     return this.kyBaoCaoService.tongHop(kyId, user);
   }
 
+  @Get(':kyId/so-sanh')
+  @Roles('SYS_ADMIN', 'UNIT_ADMIN', 'APPROVER')
+  soSanh(@Param('kyId', ParseIntPipe) kyId: number, @CurrentUser() user: CurrentUserPayload) {
+    return this.kyBaoCaoService.soSanh(kyId, user);
+  }
+
   @Post(':kyId/nhac-nop')
   @Roles('SYS_ADMIN', 'UNIT_ADMIN')
   nhacNop(@Param('kyId', ParseIntPipe) kyId: number, @CurrentUser() user: CurrentUserPayload) {

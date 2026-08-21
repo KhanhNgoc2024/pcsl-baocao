@@ -29,6 +29,36 @@ export function useTongHopKy(kyId: number | undefined) {
   });
 }
 
+export interface KyTomTat {
+  id: number;
+  tenKy: string;
+  nam: number;
+  kySo: number;
+}
+
+export interface SoSanhKyItem {
+  ma: string;
+  nhan: string;
+  hienTai: number;
+  truoc: number | null;
+  chenhLech: number | null;
+  phanTram: number | null;
+}
+
+export interface SoSanhKy {
+  kyHienTai: KyTomTat;
+  kyTruoc: KyTomTat | null;
+  soSanh: SoSanhKyItem[];
+}
+
+export function useSoSanhKy(kyId: number | undefined) {
+  return useQuery({
+    queryKey: ['ky', kyId, 'so-sanh'],
+    queryFn: async () => (await api.get<SoSanhKy>(`/ky/${kyId}/so-sanh`)).data,
+    enabled: !!kyId,
+  });
+}
+
 export function useNhacNop() {
   const qc = useQueryClient();
   return useMutation({

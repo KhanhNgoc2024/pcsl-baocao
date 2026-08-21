@@ -1,8 +1,17 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Typography, Table, Tag, Button, Space, Statistic, Row, Col, App, Input, Drawer, List, Empty } from 'antd';
-import { FileExcelOutlined, FileZipOutlined, BellOutlined, CheckOutlined, RollbackOutlined, LineChartOutlined } from '@ant-design/icons';
-import { useTongHopKy, useNhacNop, taiExcelKy, taiZipKy } from '../../api/kyBaoCao';
+import { Typography, Table, Tag, Button, Space, Statistic, Row, Col, App, Input, Drawer, List, Empty, Card } from 'antd';
+import {
+  FileExcelOutlined,
+  FileZipOutlined,
+  BellOutlined,
+  CheckOutlined,
+  RollbackOutlined,
+  LineChartOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+} from '@ant-design/icons';
+import { useTongHopKy, useSoSanhKy, useNhacNop, taiExcelKy, taiZipKy } from '../../api/kyBaoCao';
 import { useDuyetBaoCao, useBaoCaoNopDetail } from '../../api/baoCaoNop';
 import { duongDanTaiXuong } from '../../api/tep';
 import { DynamicForm } from '../../components/DynamicForm';
@@ -21,6 +30,7 @@ export function KyBaoCaoDetailPage() {
   const { kyId } = useParams();
   const id = Number(kyId);
   const { data, isLoading, refetch } = useTongHopKy(id);
+  const { data: soSanh, isLoading: dangTaiSoSanh } = useSoSanhKy(id);
   const nhacNop = useNhacNop();
   const duyetBaoCao = useDuyetBaoCao();
   const { message, modal } = App.useApp();
@@ -107,6 +117,51 @@ export function KyBaoCaoDetailPage() {
           <Statistic title="Tỷ lệ nộp" value={(data?.thongKe.tyLe ?? 0) * 100} precision={0} suffix="%" />
         </Col>
       </Row>
+
+      {soSanh && soSanh.soSanh.length > 0 && (
+        <Card
+          title={`So sánh với kỳ trước${soSanh.kyTruoc ? ` (${soSanh.kyTruoc.tenKy})` : ''}`}
+          loading={dangTaiSoSanh}
+          style={{ marginBottom: 16 }}
+        >
+          {soSanh.kyTruoc ? (
+            <Table
+              size="small"
+              rowKey="ma"
+              pagination={false}
+              dataSource={soSanh.soSanh}
+              columns={[
+                { title: 'Số liệu', dataIndex: 'nhan' },
+                { title: soSanh.kyTruoc.tenKy, dataIndex: 'truoc', align: 'right', render: (v) => (v ?? 0).toLocaleString('vi-VN') },
+                {
+                  title: soSanh.kyHienTai.tenKy,
+                  dataIndex: 'hienTai',
+                  align: 'right',
+                  render: (v) => <strong>{(v ?? 0).toLocaleString('vi-VN')}</strong>,
+                },
+                {
+                  title: 'Chênh lệch',
+                  dataIndex: 'chenhLech',
+                  align: 'right',
+                  render: (v, r) => {
+                    const cl = v ?? 0;
+                    const mau = cl > 0 ? '#3f8600' : cl < 0 ? '#cf1322' : undefined;
+                    const dau = cl > 0 ? <ArrowUpOutlined /> : cl < 0 ? <ArrowDownOutlined /> : null;
+                    return (
+                      <span style={{ color: mau }}>
+                        {dau} {cl.toLocaleString('vi-VN')}
+                        {r.phanTram !== null && <> ({r.phanTram > 0 ? '+' : ''}{r.phanTram.toFixed(1)}%)</>}
+                      </span>
+                    );
+                  },
+                },
+              ]}
+            />
+          ) : (
+            <Empty description="Chưa có kỳ trước để so sánh" />
+          )}
+        </Card>
+      )}
 
       <Space style={{ marginBottom: 16 }}>
         <Button icon={<FileExcelOutlined />} onClick={onXuatExcel} loading={dangTaiExcel}>

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ThongBaoService } from '../thong-bao/thong-bao.service';
 import { CurrentUserPayload } from '../common/decorators/current-user.decorator';
 import { isSysAdmin, kyBaoCaoScopeWhere, TRANG_THAI_DA_DEN_HUB } from '../common/scope/scope.util';
+import { layDanhSachTruongSo, tinhTongGiaTriTruongSo } from '../common/truong-so.util';
 
 @Injectable()
 export class KyBaoCaoService {
@@ -75,6 +76,46 @@ export class KyBaoCaoService {
       ky,
       items,
       thongKe: { tongDonVi: items.length, daNop, chuaNop: items.length - daNop, tyLe: items.length ? daNop / items.length : 0 },
+    };
+  }
+
+  /** So sánh số liệu (trường kiểu "so", nhãn con "nhom", cột tổng "bang") của kỳ này với kỳ liền trước cùng mẫu báo cáo — hiển thị ở phần riêng, tách biệt với bảng tổng hợp theo đơn vị. */
+  async soSanh(kyId: number, user: CurrentUserPayload) {
+    const ky = await this.findWithScopeCheck(kyId, user);
+    const truongList: any[] = (ky.mauBaoCao.cauHinhBieuMau as any)?.truong ?? [];
+    const truongSo = layDanhSachTruongSo(truongList);
+
+    const kyTruoc = await this.prisma.kyBaoCao.findFirst({
+      where: {
+        mauBaoCaoId: ky.mauBaoCaoId,
+        OR: [
+          { nam: ky.nam, kySo: { lt: ky.kySo } },
+          { nam: { lt: ky.nam } },
+        ],
+      },
+      orderBy: [{ nam: 'desc' }, { kySo: 'desc' }],
+    });
+
+    const layGiaTriTheoKy = async (id: number) => {
+      const baoCaoNop = await this.prisma.baoCaoNop.findMany({ where: { kyBaoCaoId: id }, select: { duLieu: true } });
+      return tinhTongGiaTriTruongSo(truongSo, baoCaoNop);
+    };
+
+    const giaTriHienTai = await layGiaTriTheoKy(ky.id);
+    const giaTriTruoc = kyTruoc ? await layGiaTriTheoKy(kyTruoc.id) : null;
+
+    const soSanh = truongSo.map((t) => {
+      const hienTai = giaTriHienTai[t.ma] ?? 0;
+      const truoc = giaTriTruoc ? (giaTriTruoc[t.ma] ?? 0) : null;
+      const chenhLech = truoc !== null ? hienTai - truoc : null;
+      const phanTram = truoc !== null && truoc !== 0 ? (chenhLech! / truoc) * 100 : null;
+      return { ma: t.ma, nhan: t.nhan, hienTai, truoc, chenhLech, phanTram };
+    });
+
+    return {
+      kyHienTai: { id: ky.id, tenKy: ky.tenKy, nam: ky.nam, kySo: ky.kySo },
+      kyTruoc: kyTruoc ? { id: kyTruoc.id, tenKy: kyTruoc.tenKy, nam: kyTruoc.nam, kySo: kyTruoc.kySo } : null,
+      soSanh,
     };
   }
 

@@ -42,6 +42,7 @@ export interface TongHopNam {
   nam: number;
   truongSo: { ma: string; nhan: string }[];
   kyThongKe: KyThongKeNam[];
+  tongCongCaNam: Record<string, number>;
 }
 
 export function useTongHopNam(mauId: number | undefined, nam: number) {
