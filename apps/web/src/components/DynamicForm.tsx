@@ -1,5 +1,6 @@
-import { Input, InputNumber, DatePicker, Select, Form, Table, Button, Space, Typography, Row, Col } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useEffect, useState } from 'react';
+import { Input, InputNumber, DatePicker, Select, Form, Table, Button, Space, Typography, Row, Col, Modal } from 'antd';
+import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { CauHinhBieuMau, TruongBieuMau } from '../api/types';
 
@@ -8,6 +9,71 @@ interface Props {
   value?: Record<string, unknown>;
   onChange?: (value: Record<string, unknown>) => void;
   disabled?: boolean;
+}
+
+type CotBang = NonNullable<TruongBieuMau['cot']>[number];
+
+function hienThiGiaTri(v: unknown): string {
+  if (v === undefined || v === null || v === '') return '—';
+  return String(v);
+}
+
+/** Cửa sổ nhập liệu 1 dòng của bảng — mỗi cột 1 ô riêng, xếp dọc, dễ nhập hơn nhiều so với sửa trực tiếp trong bảng nhiều cột. */
+function SuaDongBangModal({
+  open,
+  tieuDe,
+  cot,
+  giaTriBanDau,
+  onLuu,
+  onDong,
+}: {
+  open: boolean;
+  tieuDe: string;
+  cot: CotBang[];
+  giaTriBanDau: Record<string, unknown>;
+  onLuu: (giaTri: Record<string, unknown>) => void;
+  onDong: () => void;
+}) {
+  const [giaTri, setGiaTri] = useState<Record<string, unknown>>({});
+
+  useEffect(() => {
+    if (open) setGiaTri(giaTriBanDau);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const suaO = (ma: string, val: unknown) => setGiaTri((g) => ({ ...g, [ma]: val }));
+
+  return (
+    <Modal
+      title={tieuDe}
+      open={open}
+      onCancel={onDong}
+      onOk={() => {
+        onLuu(giaTri);
+        onDong();
+      }}
+      okText="Lưu"
+      cancelText="Huỷ"
+      destroyOnHidden
+    >
+      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        {cot.map((c, i) => (
+          <Form.Item key={c.ma} label={c.nhan} style={{ marginBottom: 0 }}>
+            {c.kieu === 'so' ? (
+              <InputNumber
+                style={{ width: '100%' }}
+                autoFocus={i === 0}
+                value={giaTri[c.ma] as number}
+                onChange={(v) => suaO(c.ma, v)}
+              />
+            ) : (
+              <Input autoFocus={i === 0} value={giaTri[c.ma] as string} onChange={(e) => suaO(c.ma, e.target.value)} />
+            )}
+          </Form.Item>
+        ))}
+      </Space>
+    </Modal>
+  );
 }
 
 /** Bảng với danh sách dòng cố định do admin định nghĩa (vd: Viettel, VNPT...) — người nộp chỉ điền giá trị từng ô, không thêm/xoá được dòng. */
@@ -24,57 +90,68 @@ function BangDongCoDinhField({
 }) {
   const cot = truong.cot ?? [];
   const dong = truong.dong ?? [];
-
-  const suaO = (dongMa: string, cotMa: string, val: unknown) => {
-    onChange({ ...giaTri, [dongMa]: { ...(giaTri[dongMa] ?? {}), [cotMa]: val } });
-  };
+  const [dongDangSua, setDongDangSua] = useState<{ ma: string; nhan: string } | null>(null);
 
   const tong = (cotMa: string) => dong.reduce((s, d) => s + (Number(giaTri[d.ma]?.[cotMa]) || 0), 0);
 
   return (
-    <Table
-      scroll={{ x: 'max-content' }}
-      rowKey="ma"
-      dataSource={dong}
-      pagination={false}
-      size="small"
-      columns={[
-        { title: '', dataIndex: 'nhan', fixed: 'left' as const },
-        ...cot.map((c) => ({
-          title: c.nhan + (c.tong ? ' (tổng)' : ''),
-          dataIndex: c.ma,
-          render: (_: unknown, d: { ma: string }) =>
-            c.kieu === 'so' ? (
-              <InputNumber
-                value={giaTri[d.ma]?.[c.ma] as number}
-                disabled={disabled}
-                onChange={(val) => suaO(d.ma, c.ma, val)}
-                style={{ width: '100%' }}
-              />
-            ) : (
-              <Input
-                value={giaTri[d.ma]?.[c.ma] as string}
-                disabled={disabled}
-                onChange={(e) => suaO(d.ma, c.ma, e.target.value)}
-              />
-            ),
-        })),
-      ]}
-      summary={() =>
-        cot.some((c) => c.tong) ? (
-          <Table.Summary.Row>
-            <Table.Summary.Cell index={0}>
-              <b>Tổng</b>
-            </Table.Summary.Cell>
-            {cot.map((c, i) => (
-              <Table.Summary.Cell key={c.ma} index={i + 1}>
-                {c.tong ? <b>{tong(c.ma)}</b> : ''}
+    <>
+      <Table
+        scroll={{ x: 'max-content' }}
+        rowKey="ma"
+        dataSource={dong}
+        pagination={false}
+        size="small"
+        columns={[
+          { title: '', dataIndex: 'nhan', fixed: 'left' as const },
+          ...cot.map((c) => ({
+            title: c.nhan + (c.tong ? ' (tổng)' : ''),
+            dataIndex: c.ma,
+            render: (_: unknown, d: { ma: string }) => hienThiGiaTri(giaTri[d.ma]?.[c.ma]),
+          })),
+          ...(disabled
+            ? []
+            : [
+                {
+                  title: '',
+                  key: 'action',
+                  width: 90,
+                  render: (_: unknown, d: { ma: string; nhan: string }) => (
+                    <Button size="small" icon={<EditOutlined />} onClick={() => setDongDangSua(d)}>
+                      Sửa
+                    </Button>
+                  ),
+                },
+              ]),
+        ]}
+        summary={() =>
+          cot.some((c) => c.tong) ? (
+            <Table.Summary.Row>
+              <Table.Summary.Cell index={0}>
+                <b>Tổng</b>
               </Table.Summary.Cell>
-            ))}
-          </Table.Summary.Row>
-        ) : null
-      }
-    />
+              {cot.map((c, i) => (
+                <Table.Summary.Cell key={c.ma} index={i + 1}>
+                  {c.tong ? <b>{tong(c.ma)}</b> : ''}
+                </Table.Summary.Cell>
+              ))}
+              {!disabled && <Table.Summary.Cell index={cot.length + 1} />}
+            </Table.Summary.Row>
+          ) : null
+        }
+      />
+      <SuaDongBangModal
+        open={!!dongDangSua}
+        tieuDe={dongDangSua?.nhan ?? ''}
+        cot={cot}
+        giaTriBanDau={(dongDangSua && giaTri[dongDangSua.ma]) || {}}
+        onDong={() => setDongDangSua(null)}
+        onLuu={(giaTriMoi) => {
+          if (!dongDangSua) return;
+          onChange({ ...giaTri, [dongDangSua.ma]: giaTriMoi });
+        }}
+      />
+    </>
   );
 }
 
@@ -91,12 +168,9 @@ function BangDongTuDoField({
   disabled?: boolean;
 }) {
   const cot = truong.cot ?? [];
+  const [indexDangSua, setIndexDangSua] = useState<number | null>(null);
+  const dangThemMoi = indexDangSua === rows.length;
 
-  const suaODong = (index: number, ma: string, val: unknown) => {
-    onChange(rows.map((r, i) => (i === index ? { ...r, [ma]: val } : r)));
-  };
-
-  const themDong = () => onChange([...rows, {}]);
   const xoaDong = (index: number) => onChange(rows.filter((_, i) => i !== index));
 
   const tong = (ma: string) => rows.reduce((s, r) => s + (Number(r[ma]) || 0), 0);
@@ -113,17 +187,7 @@ function BangDongTuDoField({
           ...cot.map((c) => ({
             title: c.nhan + (c.tong ? ' (tổng)' : ''),
             dataIndex: c.ma,
-            render: (v: unknown, _r: unknown, index: number) =>
-              c.kieu === 'so' ? (
-                <InputNumber
-                  value={v as number}
-                  disabled={disabled}
-                  onChange={(val) => suaODong(index, c.ma, val)}
-                  style={{ width: '100%' }}
-                />
-              ) : (
-                <Input value={v as string} disabled={disabled} onChange={(e) => suaODong(index, c.ma, e.target.value)} />
-              ),
+            render: (v: unknown) => hienThiGiaTri(v),
           })),
           ...(disabled
             ? []
@@ -131,9 +195,12 @@ function BangDongTuDoField({
                 {
                   title: '',
                   key: 'action',
-                  width: 50,
+                  width: 120,
                   render: (_: unknown, _r: unknown, index: number) => (
-                    <Button danger size="small" icon={<DeleteOutlined />} onClick={() => xoaDong(index)} />
+                    <Space>
+                      <Button size="small" icon={<EditOutlined />} onClick={() => setIndexDangSua(index)} />
+                      <Button danger size="small" icon={<DeleteOutlined />} onClick={() => xoaDong(index)} />
+                    </Space>
                   ),
                 },
               ]),
@@ -152,10 +219,25 @@ function BangDongTuDoField({
         }
       />
       {!disabled && (
-        <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={themDong} style={{ marginTop: 8 }}>
+        <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={() => setIndexDangSua(rows.length)} style={{ marginTop: 8 }}>
           Thêm dòng
         </Button>
       )}
+      <SuaDongBangModal
+        open={indexDangSua !== null}
+        tieuDe={dangThemMoi ? 'Thêm dòng mới' : `Sửa dòng ${(indexDangSua ?? 0) + 1}`}
+        cot={cot}
+        giaTriBanDau={(indexDangSua !== null && rows[indexDangSua]) || {}}
+        onDong={() => setIndexDangSua(null)}
+        onLuu={(giaTriMoi) => {
+          if (indexDangSua === null) return;
+          if (dangThemMoi) {
+            onChange([...rows, giaTriMoi]);
+          } else {
+            onChange(rows.map((r, i) => (i === indexDangSua ? giaTriMoi : r)));
+          }
+        }}
+      />
     </div>
   );
 }
