@@ -81,6 +81,8 @@ enum TrangThaiBaoCaoVanBan {
 enum TrangThaiBcvbNop {
   CHUA_NOP
   DA_NOP
+  DA_DUYET
+  TRA_LAI
 }
 
 enum LoaiFile {
@@ -156,6 +158,7 @@ model NguoiDung {
   baoCaoNopDuyet       BaoCaoNop[]       @relation("NguoiDuyet")
   baoCaoNopDuyetDonVi  BaoCaoNop[]       @relation("NguoiDuyetDonVi")
   bcvbNop              BaoCaoVanBanNop[] @relation("BcvbNguoiNop")
+  bcvbNopDuyet         BaoCaoVanBanNop[] @relation("BcvbNguoiDuyet")
   tepDinhKem     TepDinhKem[]
   thongBao       ThongBao[]
   nhatKy         NhatKy[]
@@ -279,6 +282,7 @@ model BaoCaoVanBan {
   hanNop       DateTime              @map("han_nop")
   fileYeuCauId Int?                  @map("file_yeu_cau_id")
   fileYeuCau   TepDinhKem?           @relation("FileYeuCauBcvb", fields: [fileYeuCauId], references: [id])
+  canDuyet     Boolean               @default(false) @map("can_duyet")
   trangThai    TrangThaiBaoCaoVanBan @default(HOAT_DONG) @map("trang_thai")
 
   donViGiao BaoCaoVanBanDonVi[]
@@ -312,6 +316,10 @@ model BaoCaoVanBanNop {
   thoiGianNop    DateTime?        @map("thoi_gian_nop")
   treHan         Boolean          @default(false) @map("tre_han")
   ghiChu         String?          @map("ghi_chu")
+  nguoiDuyetId   Int?             @map("nguoi_duyet_id")
+  nguoiDuyet     NguoiDung?       @relation("BcvbNguoiDuyet", fields: [nguoiDuyetId], references: [id])
+  thoiGianDuyet  DateTime?        @map("thoi_gian_duyet")
+  ghiChuDuyet    String?          @map("ghi_chu_duyet")
 
   tepDinhKem TepDinhKem[]
 

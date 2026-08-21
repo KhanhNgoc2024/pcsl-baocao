@@ -24,6 +24,13 @@ export const TRANG_THAI_BAO_CAO_NOP_LABEL: Record<string, string> = {
   TRA_LAI: 'Trả lại',
 };
 
+export const TRANG_THAI_BCVB_NOP_LABEL: Record<string, string> = {
+  CHUA_NOP: 'Chưa nộp',
+  DA_NOP: 'Đã nộp',
+  DA_DUYET: 'Đã duyệt',
+  TRA_LAI: 'Trả lại',
+};
+
 export const CHU_KY_LABEL: Record<string, string> = {
   THANG: 'Tháng',
   QUY: 'Quý',

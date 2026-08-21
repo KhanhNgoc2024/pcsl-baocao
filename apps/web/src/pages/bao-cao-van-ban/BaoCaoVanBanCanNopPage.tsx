@@ -1,24 +1,31 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Table, Tag, Typography, Button, Drawer, Space, Upload, App, List, Popconfirm } from 'antd';
-import { InboxOutlined } from '@ant-design/icons';
+import { Table, Tag, Typography, Button, Drawer, Space, Upload, App, List, Popconfirm, Alert } from 'antd';
+import { InboxOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useBaoCaoVanBanCanNop, useNopVanBan } from '../../api/baoCaoVanBan';
-import { useUploadTep, duongDanTaiXuong } from '../../api/tep';
+import { useUploadTep, useXoaTep, duongDanTaiXuong } from '../../api/tep';
+import { TRANG_THAI_BCVB_NOP_LABEL } from '../../utils/labels';
 
-const TRANG_THAI_COLOR: Record<string, string> = { CHUA_NOP: 'default', DA_NOP: 'blue' };
-const TRANG_THAI_LABEL: Record<string, string> = { CHUA_NOP: 'Chưa nộp', DA_NOP: 'Đã nộp' };
+const TRANG_THAI_COLOR: Record<string, string> = { CHUA_NOP: 'default', DA_NOP: 'blue', DA_DUYET: 'green', TRA_LAI: 'red' };
 
 export function BaoCaoVanBanCanNopPage() {
   const { data, isLoading } = useBaoCaoVanBanCanNop();
   const nopVanBan = useNopVanBan();
   const uploadTep = useUploadTep();
+  const xoaTep = useXoaTep();
   const { message } = App.useApp();
   const qc = useQueryClient();
 
   const [dangMoId, setDangMoId] = useState<number | null>(null);
   const dangMo = data?.find((n) => n.id === dangMoId) ?? null;
   const cheDo = dangMo?.baoCaoVanBan?.cheDo;
-  const chiCoTheXem = cheDo === 'CHI_XEM' || dangMo?.trangThai === 'DA_NOP';
+  const chiCoTheXem = cheDo === 'CHI_XEM' || dangMo?.trangThai === 'DA_NOP' || dangMo?.trangThai === 'DA_DUYET';
+
+  const onXoaTep = async (tepId: number) => {
+    await xoaTep.mutateAsync(tepId);
+    await qc.invalidateQueries({ queryKey: ['bao-cao-van-ban-can-nop'] });
+    message.success('Đã xoá file');
+  };
 
   const onNop = async () => {
     if (!dangMoId) return;
@@ -47,7 +54,7 @@ export function BaoCaoVanBanCanNopPage() {
             dataIndex: 'trangThai',
             render: (v, r) => (
               <Space>
-                <Tag color={TRANG_THAI_COLOR[v]}>{TRANG_THAI_LABEL[v] ?? v}</Tag>
+                <Tag color={TRANG_THAI_COLOR[v]}>{TRANG_THAI_BCVB_NOP_LABEL[v] ?? v}</Tag>
                 {r.treHan && <Tag color="red">Trễ hạn</Tag>}
               </Space>
             ),
@@ -64,12 +71,32 @@ export function BaoCaoVanBanCanNopPage() {
       />
 
       <Drawer title={dangMo?.baoCaoVanBan?.ten} width={600} open={!!dangMoId} onClose={() => setDangMoId(null)}>
+        {dangMo?.trangThai === 'TRA_LAI' && (
+          <Alert
+            type="warning"
+            showIcon
+            message="Báo cáo bị trả lại"
+            description={dangMo.ghiChuDuyet || 'Vui lòng kiểm tra và nộp lại.'}
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
         <Typography.Title level={5}>File đính kèm</Typography.Title>
         <List
           size="small"
           dataSource={dangMo?.tepDinhKem}
           renderItem={(tep) => (
-            <List.Item>
+            <List.Item
+              actions={
+                !chiCoTheXem
+                  ? [
+                      <Popconfirm key="xoa" title="Xoá file này?" onConfirm={() => onXoaTep(tep.id)}>
+                        <Button size="small" danger type="text" icon={<DeleteOutlined />} />
+                      </Popconfirm>,
+                    ]
+                  : []
+              }
+            >
               <a href={duongDanTaiXuong(tep.id)} target="_blank" rel="noreferrer">
                 {tep.tenGoc}
               </a>

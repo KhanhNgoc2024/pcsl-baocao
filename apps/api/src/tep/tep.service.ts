@@ -110,6 +110,30 @@ export class TepService {
     }
   }
 
+  /**
+   * Xoá file đính kèm khi người nộp chọn nhầm file — chỉ cho phép với file đính kèm của bản nộp báo cáo văn bản
+   * (bcvb_nop) do chính đơn vị đó tải lên, và chỉ khi bản nộp chưa được nộp/duyệt (CHUA_NOP hoặc bị trả lại TRA_LAI).
+   */
+  async remove(id: number, user: CurrentUserPayload): Promise<void> {
+    const tep = await this.prisma.tepDinhKem.findUnique({
+      where: { id },
+      include: { bcvbNop: true },
+    });
+    if (!tep) throw new NotFoundException('Không tìm thấy file');
+    if (!tep.bcvbNop) {
+      throw new ForbiddenException('Không có quyền xoá file này');
+    }
+    if (!isSysAdmin(user) && tep.bcvbNop.donViId !== user.donViId) {
+      throw new ForbiddenException('Không có quyền xoá file này');
+    }
+    if (tep.bcvbNop.trangThai === 'DA_NOP' || tep.bcvbNop.trangThai === 'DA_DUYET') {
+      throw new BadRequestException('Báo cáo đã nộp hoặc đã duyệt, không thể xoá file đính kèm');
+    }
+
+    await this.prisma.tepDinhKem.delete({ where: { id } });
+    await unlink(join(this.uploadDir(), tep.duongDanLuu)).catch(() => undefined);
+  }
+
   async findWithScopeCheck(id: number, user: CurrentUserPayload) {
     const tep = await this.prisma.tepDinhKem.findUnique({
       where: { id },

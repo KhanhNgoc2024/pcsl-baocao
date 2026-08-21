@@ -42,6 +42,7 @@ export interface BaoCaoVanBanInput {
   cheDo: CheDoBaoCaoVanBan;
   hanNop: string;
   fileYeuCauId?: number;
+  canDuyet?: boolean;
 }
 
 export function useTaoBaoCaoVanBan() {
@@ -85,6 +86,13 @@ export function useNopVanBan() {
   return useMutation({
     mutationFn: (id: number) => api.post(`/bao-cao-van-ban-nop/${id}/nop`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bao-cao-van-ban-can-nop'] }),
+  });
+}
+
+export function useDuyetVanBanNop() {
+  return useMutation({
+    mutationFn: ({ id, ketQua, ghiChu }: { id: number; ketQua: 'DA_DUYET' | 'TRA_LAI'; ghiChu?: string }) =>
+      api.post(`/bao-cao-van-ban-nop/${id}/duyet`, { ketQua, ghiChu }),
   });
 }
 

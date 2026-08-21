@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -30,8 +31,16 @@ export class TepController {
     @CurrentUser() user: CurrentUserPayload,
   ) {
     if (!file) throw new BadRequestException('Thiếu file tải lên');
+    // Multer/busboy giải mã header multipart theo latin1 mặc định, trong khi trình duyệt gửi tên file dạng UTF-8
+    // (VD "Báo cáo.pdf") — nếu không chuyển lại, tenGoc lưu trong DB sẽ bị lỗi phông (mojibake).
+    file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
     const lienKetId = dto.lienKetId ? Number(dto.lienKetId) : undefined;
     return this.tepService.upload(file, dto.loaiLienKet, lienKetId, user);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserPayload) {
+    return this.tepService.remove(id, user);
   }
 
   @Get(':id/tai-xuong')

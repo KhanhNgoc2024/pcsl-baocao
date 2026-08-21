@@ -19,6 +19,12 @@ export function useUploadTep() {
   });
 }
 
+export function useXoaTep() {
+  return useMutation({
+    mutationFn: (tepId: number) => api.delete(`/tep/${tepId}`),
+  });
+}
+
 export function duongDanTaiXuong(tepId: number) {
   return `/api/tep/${tepId}/tai-xuong`;
 }

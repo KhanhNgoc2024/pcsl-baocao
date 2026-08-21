@@ -5,7 +5,7 @@ export type ChuKy = 'THANG' | 'QUY' | 'NAM';
 export type LoaiNhap = 'BIEU_MAU' | 'TAI_FILE' | 'CA_HAI';
 export type TrangThaiBaoCaoNop = 'CHUA_NOP' | 'NHAP' | 'CHO_DUYET_DON_VI' | 'DA_NOP' | 'DA_DUYET' | 'TRA_LAI';
 export type CheDoBaoCaoVanBan = 'CHO_PHEP_TAI_LEN' | 'CHI_XEM';
-export type TrangThaiBcvbNop = 'CHUA_NOP' | 'DA_NOP';
+export type TrangThaiBcvbNop = 'CHUA_NOP' | 'DA_NOP' | 'DA_DUYET' | 'TRA_LAI';
 
 export interface DonVi {
   id: number;
@@ -136,6 +136,7 @@ export interface BaoCaoVanBan {
   cheDo: CheDoBaoCaoVanBan;
   hanNop: string;
   fileYeuCauId: number | null;
+  canDuyet: boolean;
   trangThai: 'HOAT_DONG' | 'NGUNG';
   donViGiao?: { donViId: number; donVi: DonVi }[];
 }
@@ -150,6 +151,9 @@ export interface BaoCaoVanBanNop {
   thoiGianNop: string | null;
   treHan: boolean;
   ghiChu: string | null;
+  nguoiDuyetId: number | null;
+  thoiGianDuyet: string | null;
+  ghiChuDuyet: string | null;
   tepDinhKem?: TepDinhKem[];
 }
 

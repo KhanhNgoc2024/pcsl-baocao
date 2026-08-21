@@ -18,31 +18,44 @@ import {
   Statistic,
   Row,
   Col,
+  Checkbox,
 } from 'antd';
-import { PlusOutlined, UploadOutlined, FileExcelOutlined, FileZipOutlined, BellOutlined } from '@ant-design/icons';
+import {
+  PlusOutlined,
+  UploadOutlined,
+  FileExcelOutlined,
+  FileZipOutlined,
+  BellOutlined,
+  CheckOutlined,
+  RollbackOutlined,
+} from '@ant-design/icons';
 import {
   useBaoCaoVanBanList,
   useTaoBaoCaoVanBan,
+  useSuaBaoCaoVanBan,
   useGiaoDonViVanBan,
   useTongHopVanBan,
   useNhacNopVanBan,
+  useDuyetVanBanNop,
   taiExcelVanBan,
   taiZipVanBan,
 } from '../../api/baoCaoVanBan';
 import { useDonViList } from '../../api/donVi';
 import { useUploadTep } from '../../api/tep';
+import { TRANG_THAI_BCVB_NOP_LABEL } from '../../utils/labels';
 
-const TRANG_THAI_COLOR: Record<string, string> = { CHUA_NOP: 'default', DA_NOP: 'blue' };
-const TRANG_THAI_LABEL: Record<string, string> = { CHUA_NOP: 'Chưa nộp', DA_NOP: 'Đã nộp' };
+const TRANG_THAI_COLOR: Record<string, string> = { CHUA_NOP: 'default', DA_NOP: 'blue', DA_DUYET: 'green', TRA_LAI: 'red' };
 
 export function BaoCaoVanBanListPage() {
   const { data, isLoading } = useBaoCaoVanBanList();
   const [searchParams, setSearchParams] = useSearchParams();
   const taoBcvb = useTaoBaoCaoVanBan();
+  const suaBcvb = useSuaBaoCaoVanBan();
   const giaoDonVi = useGiaoDonViVanBan();
   const nhacNop = useNhacNopVanBan();
+  const duyetVanBan = useDuyetVanBanNop();
   const uploadTep = useUploadTep();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
 
   const [modalMo, setModalMo] = useState(false);
   const [form] = Form.useForm();
@@ -51,7 +64,7 @@ export function BaoCaoVanBanListPage() {
   const [dangXemId, setDangXemId] = useState<number | null>(null);
   const [donViDaGiao, setDonViDaGiao] = useState<number[]>([]);
   const { data: donViList } = useDonViList();
-  const { data: tongHop } = useTongHopVanBan(dangXemId ?? undefined);
+  const { data: tongHop, refetch: refetchTongHop } = useTongHopVanBan(dangXemId ?? undefined);
 
   const moTaoMoi = () => {
     form.resetFields();
@@ -105,6 +118,37 @@ export function BaoCaoVanBanListPage() {
     message.success((res.data as any).message ?? 'Đã gửi nhắc nộp');
   };
 
+  const onDoiCanDuyet = async (checked: boolean) => {
+    if (!dangXemId) return;
+    await suaBcvb.mutateAsync({ id: dangXemId, dto: { canDuyet: checked } });
+    message.success(checked ? 'Đã bật yêu cầu duyệt sau khi nộp' : 'Đã tắt yêu cầu duyệt sau khi nộp');
+  };
+
+  const onDuyet = (bcvbNopId: number) => {
+    modal.confirm({
+      title: 'Duyệt báo cáo',
+      content: 'Xác nhận duyệt báo cáo văn bản này?',
+      onOk: async () => {
+        await duyetVanBan.mutateAsync({ id: bcvbNopId, ketQua: 'DA_DUYET' });
+        message.success('Đã duyệt báo cáo');
+        refetchTongHop();
+      },
+    });
+  };
+
+  const onTraLai = (bcvbNopId: number) => {
+    let ghiChu = '';
+    modal.confirm({
+      title: 'Trả lại báo cáo',
+      content: <Input.TextArea placeholder="Lý do trả lại" onChange={(e) => (ghiChu = e.target.value)} rows={3} />,
+      onOk: async () => {
+        await duyetVanBan.mutateAsync({ id: bcvbNopId, ketQua: 'TRA_LAI', ghiChu });
+        message.success('Đã trả lại báo cáo');
+        refetchTongHop();
+      },
+    });
+  };
+
   return (
     <div>
       <Space style={{ marginBottom: 16, justifyContent: 'space-between', width: '100%' }}>
@@ -127,6 +171,7 @@ export function BaoCaoVanBanListPage() {
           { title: 'Đơn vị đầu mối', dataIndex: ['donViTao', 'tenDonVi'] },
           { title: 'Chế độ', dataIndex: 'cheDo', render: (v) => (v === 'CHO_PHEP_TAI_LEN' ? 'Cho phép tải lên' : 'Chỉ xem') },
           { title: 'Hạn nộp', dataIndex: 'hanNop', render: (v) => new Date(v).toLocaleDateString('vi-VN') },
+          { title: 'Cần duyệt', dataIndex: 'canDuyet', render: (v) => (v ? <Tag color="orange">Cần duyệt</Tag> : '') },
           {
             title: 'Trạng thái',
             dataIndex: 'trangThai',
@@ -154,6 +199,9 @@ export function BaoCaoVanBanListPage() {
           <Form.Item name="hanNop" label="Hạn nộp" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" disabledDate={(d) => d.isBefore(dayjs(), 'day')} />
           </Form.Item>
+          <Form.Item name="canDuyet" valuePropName="checked" initialValue={false}>
+            <Checkbox>Cần duyệt sau khi nộp</Checkbox>
+          </Form.Item>
           <Form.Item label="File hướng dẫn / biểu mẫu (tuỳ chọn)">
             <Upload
               beforeUpload={async (file) => {
@@ -173,6 +221,12 @@ export function BaoCaoVanBanListPage() {
 
       <Drawer title="Chi tiết yêu cầu báo cáo văn bản" width={800} open={!!dangXemId} onClose={() => setDangXemId(null)}>
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <div>
+            <Checkbox checked={tongHop?.baoCaoVanBan.canDuyet ?? false} onChange={(e) => onDoiCanDuyet(e.target.checked)}>
+              Cần duyệt sau khi nộp
+            </Checkbox>
+          </div>
+
           <div>
             <Typography.Title level={5}>Giao cho các đơn vị</Typography.Title>
             <Space direction="vertical" style={{ width: '100%' }}>
@@ -221,10 +275,28 @@ export function BaoCaoVanBanListPage() {
                 pagination={false}
                 columns={[
                   { title: 'Đơn vị', dataIndex: ['donVi', 'tenDonVi'] },
-                  { title: 'Trạng thái', dataIndex: 'trangThai', render: (v) => <Tag color={TRANG_THAI_COLOR[v]}>{TRANG_THAI_LABEL[v] ?? v}</Tag> },
+                  {
+                    title: 'Trạng thái',
+                    dataIndex: 'trangThai',
+                    render: (v) => <Tag color={TRANG_THAI_COLOR[v]}>{TRANG_THAI_BCVB_NOP_LABEL[v] ?? v}</Tag>,
+                  },
                   { title: 'Thời gian nộp', dataIndex: 'thoiGianNop', render: (v) => (v ? new Date(v).toLocaleString('vi-VN') : '—') },
                   { title: 'Người nộp', dataIndex: ['nguoiNop', 'hoTen'] },
                   { title: 'Số file', dataIndex: 'soFile' },
+                  {
+                    title: 'Thao tác',
+                    render: (_: unknown, r: NonNullable<typeof tongHop>['items'][number]) =>
+                      tongHop.baoCaoVanBan.canDuyet && r.trangThai === 'DA_NOP' && r.bcvbNopId ? (
+                        <Space>
+                          <Button size="small" icon={<CheckOutlined />} onClick={() => onDuyet(r.bcvbNopId!)}>
+                            Duyệt
+                          </Button>
+                          <Button size="small" danger icon={<RollbackOutlined />} onClick={() => onTraLai(r.bcvbNopId!)}>
+                            Trả lại
+                          </Button>
+                        </Space>
+                      ) : null,
+                  },
                 ]}
               />
             </div>

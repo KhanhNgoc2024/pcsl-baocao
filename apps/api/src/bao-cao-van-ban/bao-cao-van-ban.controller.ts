@@ -8,6 +8,7 @@ import { BaoCaoVanBanNopService } from './bao-cao-van-ban-nop.service';
 import { CreateBaoCaoVanBanDto } from './dto/create-bao-cao-van-ban.dto';
 import { UpdateBaoCaoVanBanDto } from './dto/update-bao-cao-van-ban.dto';
 import { GiaoDonViBcvbDto } from './dto/giao-don-vi.dto';
+import { DuyetVanBanDto } from './dto/duyet.dto';
 import { ExportService } from '../export/export.service';
 
 @Controller()
@@ -31,6 +32,12 @@ export class BaoCaoVanBanController {
   @Post('bao-cao-van-ban-nop/:id/nop')
   nop(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: CurrentUserPayload) {
     return this.baoCaoVanBanNopService.nop(id, user);
+  }
+
+  @Post('bao-cao-van-ban-nop/:id/duyet')
+  @Roles('SYS_ADMIN', 'UNIT_ADMIN', 'APPROVER')
+  duyet(@Param('id', ParseIntPipe) id: number, @Body() dto: DuyetVanBanDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.baoCaoVanBanNopService.duyet(id, dto.ketQua, dto.ghiChu, user);
   }
 
   @Get('bao-cao-van-ban')

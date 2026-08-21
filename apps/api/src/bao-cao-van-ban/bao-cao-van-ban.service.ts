@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ThongBaoService } from '../thong-bao/thong-bao.service';
 import { NhatKyService } from '../nhat-ky/nhat-ky.service';
 import { CurrentUserPayload } from '../common/decorators/current-user.decorator';
-import { isSysAdmin, hasRole, baoCaoVanBanScopeWhere } from '../common/scope/scope.util';
+import { isSysAdmin, hasRole, baoCaoVanBanScopeWhere, TRANG_THAI_DA_DEN_HUB } from '../common/scope/scope.util';
 import { CreateBaoCaoVanBanDto } from './dto/create-bao-cao-van-ban.dto';
 import { UpdateBaoCaoVanBanDto } from './dto/update-bao-cao-van-ban.dto';
 import { GiaoDonViBcvbDto } from './dto/giao-don-vi.dto';
@@ -33,7 +33,7 @@ export class BaoCaoVanBanService {
     });
     return list.map((b) => {
       const tongDonVi = b.bcvbNop.length;
-      const daNop = b.bcvbNop.filter((n) => n.trangThai === 'DA_NOP').length;
+      const daNop = b.bcvbNop.filter((n) => TRANG_THAI_DA_DEN_HUB.includes(n.trangThai)).length;
       const { bcvbNop, ...rest } = b;
       return { ...rest, thongKe: { tongDonVi, daNop, chuaNop: tongDonVi - daNop, tyLe: tongDonVi ? daNop / tongDonVi : 0 } };
     });
@@ -73,6 +73,7 @@ export class BaoCaoVanBanService {
         cheDo: dto.cheDo,
         hanNop: new Date(dto.hanNop),
         fileYeuCauId: dto.fileYeuCauId,
+        canDuyet: dto.canDuyet ?? false,
       },
     });
     await this.nhatKyService.ghiLog({
@@ -97,6 +98,7 @@ export class BaoCaoVanBanService {
         cheDo: dto.cheDo,
         hanNop: dto.hanNop ? new Date(dto.hanNop) : undefined,
         fileYeuCauId: dto.fileYeuCauId,
+        canDuyet: dto.canDuyet,
         trangThai: dto.trangThai,
       },
     });
@@ -149,7 +151,7 @@ export class BaoCaoVanBanService {
       nguoiNop: n.nguoiNop ? { id: n.nguoiNop.id, hoTen: n.nguoiNop.hoTen } : null,
       soFile: n.tepDinhKem.length,
     }));
-    const daNop = items.filter((i) => i.trangThai === 'DA_NOP').length;
+    const daNop = items.filter((i) => TRANG_THAI_DA_DEN_HUB.includes(i.trangThai)).length;
     return {
       baoCaoVanBan: bcvb,
       items,

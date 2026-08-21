@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsInt, IsOptional, IsString, MaxLength } from 'class-validator';
 import { CheDoBaoCaoVanBan } from '@prisma/client';
 
 export class CreateBaoCaoVanBanDto {
@@ -23,4 +23,8 @@ export class CreateBaoCaoVanBanDto {
   @IsOptional()
   @IsInt()
   fileYeuCauId?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  canDuyet?: boolean;
 }
