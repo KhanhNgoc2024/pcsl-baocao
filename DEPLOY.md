@@ -73,21 +73,52 @@ sudo npm install -g pm2
 
 ---
 
-## Bước 3 — Đưa code lên server
+## Bước 3 — Đưa code lên server (qua GitHub, giống quy trình "Phương án thi công")
 
-**Cách đơn giản nhất** (không cần thiết lập Git remote): từ máy Mac, nén và copy thư mục dự án lên server qua `rsync` (loại trừ `node_modules`, `.git`, file build):
+Dự án đã có commit đầu tiên trên nhánh `main`. Các bước còn lại **bạn tự thực hiện** (đẩy code là thao tác bạn muốn chủ động làm):
+
+### 3a. Tạo repo trống trên GitHub
+
+Vào github.com → New repository → đặt tên (vd `pcsl-baocao`) → chọn **Private** → **không** tích "Add a README" (để tránh xung đột với code đã có sẵn) → Create.
+
+### 3b. Đẩy code từ máy Mac lên GitHub
 
 ```bash
 cd ~/pcsl-baocao
-rsync -avz --exclude 'node_modules' --exclude '.git' --exclude 'apps/api/dist' --exclude 'apps/web/dist' --exclude 'apps/api/uploads' \
-  ./ <user>@<ip-may-chu>:/var/www/pcsl-baocao/
+git remote add origin git@github.com:<ten-tai-khoan-hoac-to-chuc>/pcsl-baocao.git
+git push -u origin main
 ```
 
-(Trên server, tạo thư mục trước nếu chưa có: `sudo mkdir -p /var/www/pcsl-baocao && sudo chown $USER:$USER /var/www/pcsl-baocao`)
+(Nếu dùng HTTPS thay vì SSH key: `git remote add origin https://github.com/<ten-tai-khoan>/pcsl-baocao.git`)
 
-Mỗi lần cập nhật code sau này, chạy lại đúng lệnh `rsync` này rồi làm lại Bước 8 (build + restart) — xem thêm mục "Cập nhật sau này" cuối file.
+### 3c. Trên server Ubuntu: clone repo về
 
-> **Muốn dùng Git thay vì rsync?** Đẩy code lên một repo GitHub/GitLab riêng tư, sau đó trên server: `git clone <url> /var/www/pcsl-baocao`. Cách này tiện hơn cho việc cập nhật (`git pull`) nhưng cần thiết lập thêm tài khoản Git + SSH key deploy, không bắt buộc.
+Vì repo là **private**, cần thiết lập quyền truy cập cho server trước khi `git clone` — dùng đúng cách bạn đã làm cho "Phương án thi công" (deploy key hoặc GitHub App/token). Cách phổ biến nhất — tạo SSH deploy key riêng cho server này:
+
+```bash
+# Trên server Ubuntu
+ssh-keygen -t ed25519 -C "deploy-pcsl-baocao" -f ~/.ssh/pcsl_baocao_deploy -N ""
+cat ~/.ssh/pcsl_baocao_deploy.pub
+```
+
+Copy khóa public vừa in ra, vào GitHub repo → Settings → Deploy keys → Add deploy key (không cần quyền ghi, chỉ đọc) → dán vào.
+
+Rồi thêm cấu hình để git dùng đúng key này khi clone (trên server):
+
+```bash
+cat >> ~/.ssh/config <<'EOF'
+Host github.com-pcsl-baocao
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/pcsl_baocao_deploy
+EOF
+
+sudo mkdir -p /var/www/pcsl-baocao
+sudo chown $USER:$USER /var/www/pcsl-baocao
+git clone git@github.com-pcsl-baocao:<ten-tai-khoan>/pcsl-baocao.git /var/www/pcsl-baocao
+```
+
+Từ lần sau chỉ cần `cd /var/www/pcsl-baocao && git pull` để cập nhật (xem mục "Cập nhật sau này" cuối file).
 
 ---
 
@@ -143,10 +174,15 @@ openssl rand -hex 32
 cd /var/www/pcsl-baocao
 npm install
 
-# Áp dụng toàn bộ migration đã có sẵn trong repo lên database production (KHÔNG dùng migrate dev ở đây)
-npm run build --workspace=apps/api
-cd apps/api && npx prisma migrate deploy && cd ../..
+# Sinh Prisma Client (npm install KHÔNG tự làm việc này — bắt buộc phải chạy tay)
+cd apps/api
+npx prisma generate
 
+# Áp dụng toàn bộ migration đã có sẵn trong repo lên database production (KHÔNG dùng migrate dev ở đây)
+npx prisma migrate deploy
+cd ../..
+
+npm run build --workspace=apps/api
 npm run build --workspace=apps/web
 ```
 
@@ -157,7 +193,7 @@ Bạn có 2 lựa chọn:
 **A. Bắt đầu từ đầu (khuyến nghị nếu đây là lần đầu đưa lên thật):**
 
 ```bash
-cd apps/api && npm run seed && cd ../..
+cd apps/api && npx prisma db seed && cd ../..
 ```
 
 Lệnh này tạo lại 22 đơn vị mẫu + 1 tài khoản SYS_ADMIN (mật khẩu in ra ở console khi seed) — **đổi ngay mật khẩu này**, và tạo lại "Công ty Điện lực Sơn La" + tài khoản `sysadmin.pcsl` như bạn đã có ở máy dev nếu muốn giữ đúng cấu trúc đó.
@@ -282,15 +318,17 @@ sudo ufw allow 'Nginx Full'
 
 ```bash
 # Từ máy Mac
-rsync -avz --exclude 'node_modules' --exclude '.git' --exclude 'apps/api/dist' --exclude 'apps/web/dist' --exclude 'apps/api/uploads' \
-  ~/pcsl-baocao/ <user>@<ip-may-chu>:/var/www/pcsl-baocao/
+cd ~/pcsl-baocao
+git add -A && git commit -m "mô tả thay đổi"
+git push
 
 # SSH vào server
 ssh <user>@<ip-may-chu>
 cd /var/www/pcsl-baocao
+git pull
 npm install
+cd apps/api && npx prisma generate && npx prisma migrate deploy && cd ../..
 npm run build --workspace=apps/api
-cd apps/api && npx prisma migrate deploy && cd ../..
 npm run build --workspace=apps/web
 pm2 restart pcsl-api
 ```
