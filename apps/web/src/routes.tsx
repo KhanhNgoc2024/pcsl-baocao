@@ -16,6 +16,7 @@ import { ThongBaoPage } from './pages/thong-bao/ThongBaoPage';
 import { TongHopBaoCaoPage } from './pages/tong-hop/TongHopBaoCaoPage';
 import { TongHopBaoCaoVanBanPage } from './pages/tong-hop/TongHopBaoCaoVanBanPage';
 import { DoiMatKhauPage } from './pages/DoiMatKhauPage';
+import { XoaDuLieuTestPage } from './pages/quan-tri/XoaDuLieuTestPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -45,7 +46,10 @@ export const router = createBrowserRouter([
           },
           {
             element: <ProtectedRoute roles={['SYS_ADMIN']} />,
-            children: [{ path: '/quan-tri/don-vi', element: <DonViPage /> }],
+            children: [
+              { path: '/quan-tri/don-vi', element: <DonViPage /> },
+              { path: '/quan-tri/xoa-du-lieu-test', element: <XoaDuLieuTestPage /> },
+            ],
           },
           {
             element: <ProtectedRoute roles={['SYS_ADMIN', 'UNIT_ADMIN']} />,

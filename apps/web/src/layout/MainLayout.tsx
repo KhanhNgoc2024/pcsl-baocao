@@ -11,6 +11,7 @@ import {
   LogoutOutlined,
   UserOutlined,
   BarChartOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore, coVaiTro } from '../auth/store';
@@ -74,6 +75,15 @@ export function MainLayout() {
             ? [{ key: '/quan-tri/don-vi', icon: <ApartmentOutlined />, label: <Link to="/quan-tri/don-vi">Đơn vị</Link> }]
             : []),
           { key: '/quan-tri/nguoi-dung', icon: <UserOutlined />, label: <Link to="/quan-tri/nguoi-dung">Người dùng</Link> },
+          ...(laSysAdmin
+            ? [
+                {
+                  key: '/quan-tri/xoa-du-lieu-test',
+                  icon: <DeleteOutlined />,
+                  label: <Link to="/quan-tri/xoa-du-lieu-test">Xoá dữ liệu test</Link>,
+                },
+              ]
+            : []),
         ],
       });
     }

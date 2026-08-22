@@ -18,6 +18,7 @@ import { BaoCaoNopModule } from './bao-cao-nop/bao-cao-nop.module';
 import { BaoCaoVanBanModule } from './bao-cao-van-ban/bao-cao-van-ban.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { ExportModule } from './export/export.module';
+import { HeThongModule } from './he-thong/he-thong.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ExportModule } from './export/export.module';
     BaoCaoVanBanModule,
     SchedulerModule,
     ExportModule,
+    HeThongModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
