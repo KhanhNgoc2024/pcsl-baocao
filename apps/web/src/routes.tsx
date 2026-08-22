@@ -15,7 +15,6 @@ import { BaoCaoVanBanCanNopPage } from './pages/bao-cao-van-ban/BaoCaoVanBanCanN
 import { ThongBaoPage } from './pages/thong-bao/ThongBaoPage';
 import { TongHopBaoCaoPage } from './pages/tong-hop/TongHopBaoCaoPage';
 import { TongHopBaoCaoVanBanPage } from './pages/tong-hop/TongHopBaoCaoVanBanPage';
-import { TongHopDonViPage } from './pages/tong-hop/TongHopDonViPage';
 import { DoiMatKhauPage } from './pages/DoiMatKhauPage';
 
 export const router = createBrowserRouter([
@@ -30,19 +29,18 @@ export const router = createBrowserRouter([
           { path: '*', element: <DashboardPage /> },
           { path: '/bao-cao-can-nop', element: <BaoCaoCanNopPage /> },
           { path: '/bao-cao-van-ban-can-nop', element: <BaoCaoVanBanCanNopPage /> },
-          { path: '/tong-hop-don-vi', element: <TongHopDonViPage /> },
+          { path: '/tong-hop-bao-cao', element: <TongHopBaoCaoPage /> },
+          { path: '/tong-hop-bao-cao-van-ban', element: <TongHopBaoCaoVanBanPage /> },
           { path: '/thong-bao', element: <ThongBaoPage /> },
           { path: '/doi-mat-khau', element: <DoiMatKhauPage /> },
           {
             element: <ProtectedRoute roles={['SYS_ADMIN', 'UNIT_ADMIN', 'APPROVER']} />,
             children: [
-              { path: '/tong-hop-bao-cao', element: <TongHopBaoCaoPage /> },
               { path: '/mau-bao-cao', element: <MauBaoCaoListPage /> },
               { path: '/mau-bao-cao/:id', element: <MauBaoCaoDetailPage /> },
               { path: '/mau-bao-cao/:id/tong-hop-nam', element: <TongHopNamPage /> },
               { path: '/ky/:kyId', element: <KyBaoCaoDetailPage /> },
               { path: '/bao-cao-van-ban', element: <BaoCaoVanBanListPage /> },
-              { path: '/tong-hop-bao-cao-van-ban', element: <TongHopBaoCaoVanBanPage /> },
             ],
           },
           {

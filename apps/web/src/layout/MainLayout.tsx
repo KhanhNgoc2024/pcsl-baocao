@@ -38,7 +38,6 @@ export function MainLayout() {
   const menuItems = useMemo(() => {
     const items: any[] = [
       { key: '/', icon: <DashboardOutlined />, label: <Link to="/">Bảng điều khiển</Link> },
-      { key: '/tong-hop-don-vi', icon: <BarChartOutlined />, label: <Link to="/tong-hop-don-vi">Tổng hợp báo cáo đơn vị</Link> },
       {
         key: 'danh-sach-bao-cao',
         icon: <FileTextOutlined />,
@@ -46,9 +45,7 @@ export function MainLayout() {
         children: [
           { key: '/bao-cao-can-nop', label: <Link to="/bao-cao-can-nop">Báo cáo cần nộp</Link> },
           ...(laDauMoi ? [{ key: '/mau-bao-cao', label: <Link to="/mau-bao-cao">Quản lý mẫu báo cáo</Link> }] : []),
-          ...(laDauMoi
-            ? [{ key: '/tong-hop-bao-cao', icon: <BarChartOutlined />, label: <Link to="/tong-hop-bao-cao">Tổng hợp báo cáo</Link> }]
-            : []),
+          { key: '/tong-hop-bao-cao', icon: <BarChartOutlined />, label: <Link to="/tong-hop-bao-cao">Tổng hợp báo cáo</Link> },
         ],
       },
       {
@@ -58,15 +55,11 @@ export function MainLayout() {
         children: [
           { key: '/bao-cao-van-ban-can-nop', label: <Link to="/bao-cao-van-ban-can-nop">Cần nộp</Link> },
           ...(laDauMoi ? [{ key: '/bao-cao-van-ban', label: <Link to="/bao-cao-van-ban">Quản lý yêu cầu</Link> }] : []),
-          ...(laDauMoi
-            ? [
-                {
-                  key: '/tong-hop-bao-cao-van-ban',
-                  icon: <BarChartOutlined />,
-                  label: <Link to="/tong-hop-bao-cao-van-ban">Tổng hợp báo cáo</Link>,
-                },
-              ]
-            : []),
+          {
+            key: '/tong-hop-bao-cao-van-ban',
+            icon: <BarChartOutlined />,
+            label: <Link to="/tong-hop-bao-cao-van-ban">Tổng hợp báo cáo</Link>,
+          },
         ],
       },
       { key: '/thong-bao', icon: <BellOutlined />, label: <Link to="/thong-bao">Thông báo</Link> },
