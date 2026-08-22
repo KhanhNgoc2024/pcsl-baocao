@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Table, Tag, Typography, Button, Drawer, Space, Upload, App, Alert, List, Popconfirm, Input } from 'antd';
 import { InboxOutlined, CheckOutlined, RollbackOutlined } from '@ant-design/icons';
@@ -28,6 +29,7 @@ export function BaoCaoCanNopPage() {
   const { message, modal } = App.useApp();
   const qc = useQueryClient();
   const { user } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const coTheDuyetDonVi = coVaiTro(user, 'SYS_ADMIN', 'UNIT_ADMIN', 'APPROVER');
 
@@ -42,6 +44,20 @@ export function BaoCaoCanNopPage() {
   };
 
   const dongPhieu = () => setDangMoId(null);
+
+  // Mở sẵn phiếu khi được điều hướng tới từ trang "Tổng hợp báo cáo đơn vị" kèm ?xem=<id>
+  useEffect(() => {
+    const xemId = Number(searchParams.get('xem'));
+    if (xemId && data) {
+      const bc = data.find((b) => b.id === xemId);
+      if (bc) moPhieu(bc.id, bc.duLieu);
+      setSearchParams((prev) => {
+        prev.delete('xem');
+        return prev;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const chiCoTheXem = dangMo ? KHONG_THE_SUA.includes(dangMo.trangThai) : false;
   const mauBaoCao = dangMo?.kyBaoCao?.mauBaoCao;

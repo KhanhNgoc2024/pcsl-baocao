@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Table, Tag, Typography, Button, Drawer, Space, Upload, App, List, Popconfirm, Alert } from 'antd';
 import { InboxOutlined, DeleteOutlined } from '@ant-design/icons';
@@ -15,11 +16,26 @@ export function BaoCaoVanBanCanNopPage() {
   const xoaTep = useXoaTep();
   const { message } = App.useApp();
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [dangMoId, setDangMoId] = useState<number | null>(null);
   const dangMo = data?.find((n) => n.id === dangMoId) ?? null;
   const cheDo = dangMo?.baoCaoVanBan?.cheDo;
   const chiCoTheXem = cheDo === 'CHI_XEM' || dangMo?.trangThai === 'DA_NOP' || dangMo?.trangThai === 'DA_DUYET';
+
+  // Mở sẵn phiếu khi được điều hướng tới từ trang "Tổng hợp báo cáo đơn vị" kèm ?xem=<id>
+  useEffect(() => {
+    const xemId = Number(searchParams.get('xem'));
+    if (xemId && data) {
+      const n = data.find((x) => x.id === xemId);
+      if (n) setDangMoId(n.id);
+      setSearchParams((prev) => {
+        prev.delete('xem');
+        return prev;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const onXoaTep = async (tepId: number) => {
     await xoaTep.mutateAsync(tepId);

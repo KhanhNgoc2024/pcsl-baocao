@@ -38,6 +38,7 @@ export function MainLayout() {
   const menuItems = useMemo(() => {
     const items: any[] = [
       { key: '/', icon: <DashboardOutlined />, label: <Link to="/">Bảng điều khiển</Link> },
+      { key: '/tong-hop-don-vi', icon: <BarChartOutlined />, label: <Link to="/tong-hop-don-vi">Tổng hợp báo cáo đơn vị</Link> },
       {
         key: 'danh-sach-bao-cao',
         icon: <FileTextOutlined />,
