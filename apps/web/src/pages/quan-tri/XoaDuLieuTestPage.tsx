@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Typography, Card, Alert, Descriptions, Input, Button, App, Space, Result } from 'antd';
 import { WarningOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useThongKeDuLieuTest, useXoaDuLieuTest } from '../../api/heThong';
+import type { ThongKeDuLieuTest } from '../../api/heThong';
 
 const CUM_TU_XAC_NHAN = 'XOA DU LIEU TEST';
 
-const NHAN_MUC: Record<string, string> = {
+const NHAN_MUC: Record<keyof ThongKeDuLieuTest, string> = {
   mauBaoCao: 'Mẫu báo cáo',
   kyBaoCao: 'Kỳ báo cáo',
   baoCaoNop: 'Bản nộp (theo mẫu số liệu)',
